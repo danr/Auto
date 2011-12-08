@@ -102,20 +102,60 @@ rules : List (∃ λ n → ∃₂ (Equality {n}))
 rules = (, , , plus-Z) ∷ (, , , plus-S) ∷ []
 -}
 
+_⨁_ : {n : ℕ} → Expr n → Expr n → Expr n
+-- Definition of plus
+suc e     ⨁ e₂ = suc (e ⨁ e₂)
+zero      ⨁ e₂ = e₂
+-- Nothing special here
+var x     ⨁ e₂ = var x ⊕ e₂
+(e₁ ⊕ e₂) ⨁ e₃ = (e₁ ⊕ e₂) ⊕ e₃
+
+⨁-correct : {n : ℕ} (e₁ e₂ : Expr n) (Γ : Env n)
+           → ⟦ e₁ ⊕ e₂ ⟧ Γ ≡ ⟦ e₁ ⨁ e₂ ⟧ Γ
+⨁-correct (suc e)   e₂ Γ = cong suc (⨁-correct e e₂ Γ)
+⨁-correct zero      e₂ Γ = refl
+⨁-correct (var x)   e₂ Γ = refl
+⨁-correct (e₁ ⊕ e₂) e₃ Γ = refl
+
 -- Normalization --------------------------------------------------------------
--- I think I am overcomplicating this. How would one prove completeness?
-normalize : {n : ℕ} (e : Expr n) → ∃ λ e′ → ∀ Γ → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ
-normalize (var x)       = var x                             , λ _ → refl
-normalize (var x ⊕ e₂)  = var x ⊕ (proj₁ (normalize e₂))    , λ Γ → cong (_+_ (lookup x Γ)) (proj₂ (normalize e₂) Γ)
-normalize (suc e₁ ⊕ e₂) = suc (proj₁ (normalize (e₁ ⊕ e₂))) , λ Γ → cong suc (proj₂ (normalize (e₁ ⊕ e₂)) Γ)
-normalize (zero ⊕ e₂)   = normalize e₂
-normalize (suc e)       = suc (proj₁ (normalize e))         , λ Γ → cong suc (proj₂ (normalize e) Γ)
-normalize zero          = zero                              , λ _ → refl
-normalize ((e₁ ⊕ e₂) ⊕ e₃) with normalize (e₁ ⊕ e₂)
-... | e₁' ⊕ e₂' , eq₁₂ = (e₁' ⊕ e₂') ⊕ proj₁ (normalize e₃) , λ Γ → eq₁₂ Γ ⟨ cong₂ _+_ ⟩ proj₂ (normalize e₃) Γ
-... | var x     , eq₁₂ = var x ⊕ proj₁ (normalize e₃)       , λ Γ → eq₁₂ Γ ⟨ cong₂ _+_ ⟩ proj₂ (normalize e₃) Γ
-... | suc e     , eq₁₂ = suc (e ⊕ proj₁ (normalize e₃))     , λ Γ → eq₁₂ Γ ⟨ cong₂ _+_ ⟩ proj₂ (normalize e₃) Γ
-... | zero      , eq₁₂ = proj₁ (normalize e₃)               , λ Γ → eq₁₂ Γ ⟨ cong₂ _+_ ⟩ proj₂ (normalize e₃) Γ
+-- How would one prove completeness?
+normalize : {n : ℕ} (e : Expr n) → Expr n
+normalize (var x)   = var x
+normalize (e₁ ⊕ e₂) = normalize e₁ ⨁ normalize e₂
+normalize (suc e)   = suc (normalize e)
+normalize zero      = zero
+
+normalize-correct : {n : ℕ} (e : Expr n) (Γ : Env n)
+                  → ⟦ e ⟧ Γ ≡ ⟦ normalize e ⟧ Γ
+normalize-correct (var x)   Γ = refl
+normalize-correct (e₁ ⊕ e₂) Γ = normalize-correct e₁ Γ ⟨ cong₂ _+_ ⟩ normalize-correct e₂ Γ ⟨ trans ⟩
+                                ⨁-correct (normalize e₁) (normalize e₂) Γ
+normalize-correct (suc e)   Γ = cong suc (normalize-correct e Γ)
+normalize-correct zero      Γ = refl
+
+normalize-with-correct : {n : ℕ} (e : Expr n) → ∃ λ e′ → ∀ Γ → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ
+normalize-with-correct e = normalize e , normalize-correct e
+
+{-
+-- A little failed attempt to show completeness.
+-- It should be complete wrt Agda's normalization, but I am not sure
+-- how to capture this in a type.
+
+lookup-replicate : {n : ℕ} (x : Fin n) (v : ℕ)
+                 → v ≡ lookup x (replicate v)
+lookup-replicate zero    v = refl
+lookup-replicate (suc i) v = lookup-replicate i v
+
+normalize-complete : {n : ℕ} (e : Expr n) (e′ : Expr n)
+                   → ((Γ : Env n) → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ)
+                   → normalize e ≡ normalize e′
+normalize-complete (var x) (var y  ⊕ zero) eq with x ≟-Fin y
+normalize-complete (var x) (var .x ⊕ zero) eq | yes refl = {!!}
+-- ^ this is why it is not complete in this sense
+--   Goal: var x ≡ var x ⊕ zero
+normalize-complete (var x) (var y  ⊕ zero) eq | no ¬p = {!!}
+normalize-complete e e′ eq = {!!}
+-}
 
 -- Induction instantiation ----------------------------------------------------
 
@@ -189,50 +229,57 @@ inst-ih hl hr sl sr               | _ | _ | _ = nothing
 
 -- Induction on the first variable --------------------------------------------
 induction : {n : ℕ} (lhs rhs : Expr (suc n)) → Maybe (Equality lhs rhs)
-induction lhs rhs with normalize (inst-zero lhs) | normalize (inst-zero rhs)
+induction lhs rhs with normalize-with-correct (inst-zero lhs) | normalize-with-correct (inst-zero rhs)
 ... | lhs-0 , eq-l-0 | rhs-0 , eq-r-0 with lhs-0 ≟ rhs-0
 -- Base case failed
 ... | no ¬p = nothing
 -- Base case suceeded
-... | yes p with normalize lhs | normalize rhs | normalize (inst-suc lhs) | normalize (inst-suc rhs)
+... | yes p with normalize-with-correct lhs | normalize-with-correct rhs | normalize-with-correct (inst-suc lhs) | normalize-with-correct (inst-suc rhs)
 ... | lhs-h , eq-l-h | rhs-h , eq-r-h | lhs-s , eq-l-s | rhs-s , eq-r-s with inst-ih lhs-h rhs-h lhs-s rhs-s
 -- Induction step suceeded
-... | just ih-normalized = just (equality (induction-inst lhs rhs
-                                            (λ Γ → eq-l-0 Γ ⟨ trans ⟩ cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eq-r-0 Γ))
-                                            (λ Γ ih → eq-l-s Γ                        ⟨ trans ⟩
-                                                      ih-normalized Γ (sym (eq-l-h Γ) ⟨ trans ⟩
-                                                                       ih             ⟨ trans ⟩
-                                                                       eq-r-h Γ )     ⟨ trans ⟩
-                                                      sym (eq-r-s Γ))))
+... | just ih-normalized = just (induction-inst lhs rhs
+                                    (λ Γ → eq-l-0 Γ ⟨ trans ⟩ cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eq-r-0 Γ))
+                                    (λ Γ ih → eq-l-s Γ                        ⟨ trans ⟩
+                                              ih-normalized Γ (sym (eq-l-h Γ) ⟨ trans ⟩
+                                                               ih             ⟨ trans ⟩
+                                                               eq-r-h Γ )     ⟨ trans ⟩
+                                              sym (eq-r-s Γ)))
 -- Induction step failed
 ... | nothing = nothing
 
 -- Prove a property -----------------------------------------------------------
-prove : {n : ℕ} (lhs rhs : Expr n) → Maybe (Equality lhs rhs)
-prove {zero} lhs rhs with normalize lhs | normalize rhs
+prove : (n : ℕ) (lhs rhs : Expr n) → Maybe (Equality lhs rhs)
+prove (suc n) lhs rhs = induction lhs rhs
+prove zero    lhs rhs with normalize-with-correct lhs | normalize-with-correct rhs
 ... | lhs′ , eql | rhs′ , eqr with lhs′ ≟ rhs′
-... | yes p = just (equality (λ Γ → eql Γ ⟨ trans ⟩ cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eqr Γ)))
+... | yes p = just λ Γ → eql Γ ⟨ trans ⟩ cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eqr Γ)
 ... | no ¬p = nothing
-prove {suc n} lhs rhs = induction lhs rhs
+
 
 -- Some examples --------------------------------------------------------------
 assoc-plus-vec : (Γ : Env 3) → lookup (# 0) Γ + (lookup (# 1) Γ + lookup (# 2) Γ)
                              ≡ (lookup (# 0) Γ + lookup (# 1) Γ) + lookup (# 2) Γ
-assoc-plus-vec = from-just
-               ∘ getEquality (prove (var (# 0) ⊕ (var (# 1) ⊕ var (# 2)))
-                                    ((var (# 0) ⊕ (var (# 1))) ⊕ var (# 2)))
-
+assoc-plus-vec Γ = from-just (prove 3 (var (# 0) ⊕ (var (# 1) ⊕ var (# 2)))
+                                      ((var (# 0) ⊕ (var (# 1))) ⊕ var (# 2))
+                                      ) Γ
 
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
 
-move-suc : ∀ x y → suc x + y ≡ x + suc y
-move-suc x y = from-just (getEquality (prove (suc (var (# 0)) ⊕ (var (# 1)))
-                                             (var (# 0) ⊕ suc (var (# 1))))
-                                             (x ∷ y ∷ []))
+
+move-suc : ∀ x y → suc (x + y) ≡ x + suc y
+move-suc x y = from-just (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
+                                  (var (# 0) ⊕ suc (var (# 1))))
+                                  (x ∷ y ∷ [])
+
+move-suc′ : ∀ x y → suc x + y ≡ x + suc y
+move-suc′ x y = from-just (prove 2 (suc (var (# 0)) ⊕ (var (# 1)))
+                                   (var (# 0) ⊕ suc (var (# 1))))
+                                   (x ∷ y ∷ [])
+
 
 left-id : ∀ x → x ≡ x + zero
-left-id x = from-just (getEquality (prove (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ []))
+left-id x = from-just (prove 1 (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ [])
 
 {-
 
