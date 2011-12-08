@@ -70,7 +70,7 @@ module DecidableEquality where
 
 open DecidableEquality
 
--- The environment datatype ---------------------------------------------------
+-- The environment, a mapping from varibles to natural numbers ----------------
 Env : ℕ → Set
 Env n = Vec ℕ n
 
@@ -81,13 +81,7 @@ Env n = Vec ℕ n
 ⟦ suc e   ⟧ Γ = suc (⟦ e ⟧ Γ)
 ⟦ zero    ⟧ Γ = zero
 
--- A datatype containing an equality proof under any environment --------------
-Equality : {n : ℕ} (lhs rhs : Expr n) → Set
-Equality {n} lhs rhs = (Γ : Env n) → ⟦ lhs ⟧ Γ ≡ ⟦ rhs ⟧ Γ
-
-data Lemma : Set where
-  lemma : (n : ℕ) (lhs rhs : Expr n) (eq : Equality lhs rhs) → Lemma
-
+-- Normalization of plus ------------------------------------------------------
 _⨁_ : {n : ℕ} → Expr n → Expr n → Expr n
 -- Definition of plus
 suc e     ⨁ e₂ = suc (e ⨁ e₂)
@@ -103,7 +97,7 @@ var x     ⨁ e₂ = var x ⊕ e₂
 ⨁-correct (var x)   e₂ Γ = refl
 ⨁-correct (e₁ ⊕ e₂) e₃ Γ = refl
 
--- Normalization --------------------------------------------------------------
+-- Normalization of an expression ---------------------------------------------
 -- How would one prove completeness?
 normalize : {n : ℕ} (e : Expr n) → Expr n
 normalize (var x)   = var x
@@ -145,7 +139,7 @@ normalize-complete e e′ eq = {!!}
 
 -- Induction instantiation ----------------------------------------------------
 
--- Base case: replace variable 0 with constant zero
+-- Replace variable 0 with constant zero
 inst-zero : {n : ℕ} → Expr (suc n) → Expr n
 inst-zero (var zero)    = zero
 inst-zero (var (suc i)) = var i
@@ -153,7 +147,16 @@ inst-zero (e₁ ⊕ e₂)     = inst-zero e₁ ⊕ inst-zero e₂
 inst-zero (suc e)       = suc (inst-zero e)
 inst-zero zero          = zero
 
--- Induction step: replace variable 0 with suc of the variable
+-- This operation preserves equality under evaluation
+inst-zero-correct : {n : ℕ} (e : Expr (suc n)) (Γ : Env n)
+               → ⟦ inst-zero e ⟧ Γ ≡ ⟦ e ⟧ (0 ∷ Γ)
+inst-zero-correct (var zero)    Γ = refl
+inst-zero-correct (var (suc i)) Γ = refl
+inst-zero-correct (e₁ ⊕ e₂)     Γ = inst-zero-correct e₁ Γ ⟨ cong₂ _+_ ⟩ inst-zero-correct e₂ Γ
+inst-zero-correct (suc e)       Γ = cong suc (inst-zero-correct e Γ)
+inst-zero-correct zero          Γ = refl
+
+-- Replace variable 0 with suc of the variable
 inst-suc : {n : ℕ} → Expr (suc n) → Expr (suc n)
 inst-suc (var zero)    = suc (var zero)
 inst-suc (var (suc i)) = var (suc i)
@@ -161,51 +164,53 @@ inst-suc (e₁ ⊕ e₂)     = inst-suc e₁ ⊕ inst-suc e₂
 inst-suc (suc e)       = suc (inst-suc e)
 inst-suc zero          = zero
 
--- Base
-inst-zero-eval : {n : ℕ} (e : Expr (suc n)) (Γ : Env n)
-               → ⟦ inst-zero e ⟧ Γ ≡ ⟦ e ⟧ (0 ∷ Γ)
-inst-zero-eval (var zero)    Γ = refl
-inst-zero-eval (var (suc i)) Γ = refl
-inst-zero-eval (e₁ ⊕ e₂)     Γ = inst-zero-eval e₁ Γ ⟨ cong₂ _+_ ⟩ inst-zero-eval e₂ Γ
-inst-zero-eval (suc e)       Γ = cong suc (inst-zero-eval e Γ)
-inst-zero-eval zero          Γ = refl
-
--- Step
-inst-suc-eval : {n : ℕ} (k : ℕ) (e : Expr (suc n)) (Γ : Env n)
+-- This operation preserves equality under evaluation
+inst-suc-correct : {n : ℕ} (k : ℕ) (e : Expr (suc n)) (Γ : Env n)
               → ⟦ inst-suc e ⟧ (k ∷ Γ) ≡ ⟦ e ⟧ (suc k ∷ Γ)
-inst-suc-eval k (var zero)    Γ = refl
-inst-suc-eval k (var (suc i)) Γ = refl
-inst-suc-eval k (e₁ ⊕ e₂)     Γ = inst-suc-eval k e₁ Γ ⟨ cong₂ _+_ ⟩ inst-suc-eval k e₂ Γ
-inst-suc-eval k (suc e)       Γ = cong suc (inst-suc-eval k e Γ)
-inst-suc-eval k zero          Γ = refl
+inst-suc-correct k (var zero)    Γ = refl
+inst-suc-correct k (var (suc i)) Γ = refl
+inst-suc-correct k (e₁ ⊕ e₂)     Γ = inst-suc-correct k e₁ Γ ⟨ cong₂ _+_ ⟩ inst-suc-correct k e₂ Γ
+inst-suc-correct k (suc e)       Γ = cong suc (inst-suc-correct k e Γ)
+inst-suc-correct k zero          Γ = refl
+
+-- Equality proof of two expressions under any environment --------------------
+Equality : {n : ℕ} (lhs rhs : Expr n) → Set
+Equality {n} lhs rhs = (Γ : Env n) → ⟦ lhs ⟧ Γ ≡ ⟦ rhs ⟧ Γ
 
 -- Induction ------------------------------------------------------------------
 induction-inst : {n : ℕ} (lhs rhs : Expr (suc n))
                → (∀ Γ → ⟦ inst-zero lhs ⟧ Γ ≡ ⟦ inst-zero rhs ⟧ Γ)
                → (∀ Γ → ⟦ lhs ⟧ Γ ≡ ⟦ rhs ⟧ Γ
                       → ⟦ inst-suc lhs ⟧ Γ ≡ ⟦ inst-suc rhs ⟧ Γ)
-               → ∀ Γ → ⟦ lhs ⟧ Γ ≡ ⟦ rhs ⟧ Γ
-induction-inst lhs rhs p0 ps (zero ∷ Γ)  = sym (inst-zero-eval lhs Γ) ⟨ trans ⟩
+               → Equality lhs rhs
+induction-inst lhs rhs p0 ps (zero ∷ Γ)  = sym (inst-zero-correct lhs Γ) ⟨ trans ⟩
                                            p0 Γ                       ⟨ trans ⟩
-                                           inst-zero-eval rhs Γ
-induction-inst lhs rhs p0 ps (suc k ∷ Γ) = sym (inst-suc-eval k lhs Γ)                       ⟨ trans ⟩
+                                           inst-zero-correct rhs Γ
+induction-inst lhs rhs p0 ps (suc k ∷ Γ) = sym (inst-suc-correct k lhs Γ)                       ⟨ trans ⟩
                                            ps (k ∷ Γ) (induction-inst lhs rhs p0 ps (k ∷ Γ)) ⟨ trans ⟩
-                                           inst-suc-eval k rhs Γ
+                                           inst-suc-correct k rhs Γ
 
-cong-⟦⟧ : {n : ℕ} {e₁ e₂ : Expr n} (Γ : Env n) → e₁ ≡ e₂ → ⟦ e₁ ⟧ Γ ≡ ⟦ e₂ ⟧ Γ
-cong-⟦⟧ Γ = cong (λ e → ⟦ e ⟧ Γ)
+-- If the expressions are equal, then so is evaluating them under the same environment
+cong-⟦─⟧ : {n : ℕ} {e₁ e₂ : Expr n} (Γ : Env n) → e₁ ≡ e₂ → ⟦ e₁ ⟧ Γ ≡ ⟦ e₂ ⟧ Γ
+cong-⟦─⟧ Γ = cong (λ e → ⟦ e ⟧ Γ)
 
+-- Lemmas ---------------------------------------------------------------------
+-- Lemma datatype
+data Lemma : Set where
+  lemma : (n : ℕ) (lhs rhs : Expr n) (eq : Equality lhs rhs) → Lemma
+
+-- Instantiate direction datatype
 data LR : Set where
   left right : LR
 
--- Instantiates the first lemma that matches, if any
+-- Instantiates the first lemma that matches in the given direction
 inst-lemma : {n : ℕ} → LR → List Lemma → (e : Expr n) → Maybe (∃ (Equality e))
 inst-lemma     lr []                       e = nothing
 inst-lemma {n} lr (lemma m lhs rhs eq ∷ ls) e with n ≟-Nat m
 ... | no ¬p = inst-lemma lr ls e
 inst-lemma lr    (lemma m lhs rhs eq ∷ ls) e | yes refl with e ≟ lhs | e ≟ rhs
-inst-lemma left  (lemma m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = just (rhs , λ Γ → cong-⟦⟧ Γ p ⟨ trans ⟩ eq Γ)
-inst-lemma right (lemma m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = just (lhs , λ Γ → cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
+inst-lemma left  (lemma m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = just (rhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ eq Γ)
+inst-lemma right (lemma m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = just (lhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
 ... | _ | _ = inst-lemma lr ls e
 
 -- Instantiate the induction hypothesis. Match the goal with the given. -------
@@ -215,9 +220,9 @@ inst-ih : {n : ℕ}
         → Maybe (∀ Γ → ⟦ hl ⟧ Γ ≡ ⟦ hr ⟧ Γ → ⟦ sl ⟧ Γ ≡ ⟦ sr ⟧ Γ)
 inst-ih uses lemmas hl hr sl sr with sl ≟ sr | sl ≟ hl | hr ≟ sr
 -- The step sides match
-... | yes s-eq | _        | _        = just λ Γ _  → cong-⟦⟧ Γ s-eq
+... | yes s-eq | _        | _        = just λ Γ _  → cong-⟦─⟧ Γ s-eq
 -- The step sides match the induction hypothesis
-... | _        | yes l-eq | yes r-eq = just λ Γ ih → cong-⟦⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦⟧ Γ r-eq
+... | _        | yes l-eq | yes r-eq = just λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
 {-
 -- The left step side match the induction hypothesis  (this could be nice to use)
 ... | _        | yes l-eq | no ¬p    = ...
@@ -236,17 +241,22 @@ inst-ih uses lemmas hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂) | _ | _ | _ with inst-
 inst-ih zero         lemmas hl hr sl sr | _ | _ | _ = nothing
 -- Instantiate a lemma
 inst-ih (suc uses-1) lemmas hl hr sl sr | _ | _ | _ with inst-lemma left lemmas sl | inst-lemma right lemmas sr
-... | just (sl′ , sl≡sl′) | _ = (λ ih' Γ ih → sl≡sl′ Γ ⟨ trans ⟩ ih' Γ ih)       <$> inst-ih uses-1 lemmas hl hr sl′ sr
-... | _ | just (sr′ , sr≡sr′) = (λ ih' Γ ih → ih' Γ ih ⟨ trans ⟩ sym (sr≡sr′ Γ)) <$> inst-ih uses-1 lemmas hl hr sl sr′
+... | just (sl′ , sl≡sl′) | _ = (λ ih' Γ ih → sl≡sl′ Γ ⟨ trans ⟩ ih' Γ ih)
+                                <$> inst-ih uses-1 lemmas hl hr sl′ sr
+... | _ | just (sr′ , sr≡sr′) = (λ ih' Γ ih → ih' Γ ih ⟨ trans ⟩ sym (sr≡sr′ Γ))
+                                <$> inst-ih uses-1 lemmas hl hr sl sr′
 ... | _ | _ = nothing
 
+-- Simplification. ------------------------------------------------------------
+-- Used for the base case and for proving equality with no variables
 simp : {n : ℕ}
      → ℕ → List Lemma
-     → (lhs rhs : Expr n)                     -- normalized lhs and rhs
+     → (lhs rhs : Expr n)
+     -- ^ normalized lhs and rhs
      → Maybe (Equality lhs rhs)
 simp uses lemmas lhs rhs with lhs ≟ rhs
 -- lhs ≡ rhs by reflexivity
-... | yes p = just (λ Γ → cong-⟦⟧ Γ p)
+... | yes p = just (λ Γ → cong-⟦─⟧ Γ p)
 -- No lemma uses left
 simp zero         lemmas lhs rhs | no ¬p = nothing
 -- Try to use a lemma
@@ -313,7 +323,9 @@ move-suc x y = from-just (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
 left-id : ∀ x → x ≡ x + zero
 left-id x = from-just (prove 1 (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ [])
 
--- And some lemmas ------------------------------------------------------------
+-- Grand finale: commutativity of plus ----------------------------------------
+
+-- Some lemmas:  move-suc
 move-suc-lhs : Expr 2
 move-suc-lhs = suc (var (# 1) ⊕ (var (# 0)))
 
@@ -326,6 +338,7 @@ move-suc-lemma : Lemma
 move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs
                          (λ Γ → move-suc (lookup (suc zero) Γ) (lookup zero Γ))
 
+-- Left idenity lemma
 left-id-lhs : Expr 1
 left-id-lhs = var (# 0)
 
@@ -336,10 +349,17 @@ left-id-lemma : Lemma
 left-id-lemma = lemma 1 left-id-lhs left-id-rhs
                         (from-just (prove 1 left-id-lhs left-id-rhs))
 
--- Grand finale: commutativity of plus ----------------------------------------
+-- Commutativity of plus.
 comm-plus : ∀ x y → x + y ≡ y + x
-comm-plus x y = from-just (prove-with-lemmas 1 (move-suc-lemma ∷ left-id-lemma ∷ [])
-                                             2 (var (# 0) ⊕ var (# 1))
-                                               (var (# 1) ⊕ var (# 0)))
+comm-plus x y = from-just (prove-with-lemmas 1
+                                             -- ^ we only need to instantate lemmas once -}
+                                             (move-suc-lemma ∷ left-id-lemma ∷ [])
+                                             -- ^ lemmas to use
+                                             2
+                                             -- ^ two variables
+                                             (var (# 0) ⊕ var (# 1))
+                                             -- ^ lhs
+                                             (var (# 1) ⊕ var (# 0)))
+                                             -- ^ rhs
                           (x ∷ y ∷ [])
 
