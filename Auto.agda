@@ -247,48 +247,69 @@ induction lhs rhs with normalize-with-correct (inst-zero lhs) | normalize-with-c
 -- Induction step failed
 ... | nothing = nothing
 
--- Prove a property -----------------------------------------------------------
-prove : (n : ℕ) (lhs rhs : Expr n) → Maybe (Equality lhs rhs)
-prove (suc n) lhs rhs = induction lhs rhs
-prove zero    lhs rhs with normalize-with-correct lhs | normalize-with-correct rhs
-... | lhs′ , eql | rhs′ , eqr with lhs′ ≟ rhs′
-... | yes p = just λ Γ → eql Γ ⟨ trans ⟩ cong-⟦⟧ Γ p ⟨ trans ⟩ sym (eqr Γ)
-... | no ¬p = nothing
+-- Prove a property with lemmas -----------------------------------------------
+prove-with-lemmas : ℕ → List Lemma → (n : ℕ) (lhs rhs : Expr n) → Maybe (Equality lhs rhs)
+prove-with-lemmas u lemmas (suc n) lhs rhs = induction u lemmas lhs rhs
+prove-with-lemmas u lemmas zero    lhs rhs with normalize-with-correct lhs | normalize-with-correct rhs
+... | lhs′ , eql | rhs′ , eqr = (λ x Γ → eql Γ ⟨ trans ⟩ x Γ ⟨ trans ⟩ sym (eqr Γ))
+                                <$> simp u lemmas lhs′ rhs′
 
+
+-- Prove a property without lemmas --------------------------------------------
+prove : (n : ℕ) (lhs rhs : Expr n) → Maybe (Equality lhs rhs)
+prove = prove-with-lemmas 0 []
 
 -- Some examples --------------------------------------------------------------
+
+-- Associativity of plus ------------------------------------------------------
+-- This is how it looks if you use the vector
 assoc-plus-vec : (Γ : Env 3) → lookup (# 0) Γ + (lookup (# 1) Γ + lookup (# 2) Γ)
                              ≡ (lookup (# 0) Γ + lookup (# 1) Γ) + lookup (# 2) Γ
 assoc-plus-vec Γ = from-just (prove 3 (var (# 0) ⊕ (var (# 1) ⊕ var (# 2)))
                                       ((var (# 0) ⊕ (var (# 1))) ⊕ var (# 2))
                                       ) Γ
 
+-- But you can also specify the vector like this
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
 
-
+-- Infamous move-suc lemma ----------------------------------------------------
 move-suc : ∀ x y → suc (x + y) ≡ x + suc y
 move-suc x y = from-just (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
                                   (var (# 0) ⊕ suc (var (# 1))))
                                   (x ∷ y ∷ [])
 
-move-suc′ : ∀ x y → suc x + y ≡ x + suc y
-move-suc′ x y = from-just (prove 2 (suc (var (# 0)) ⊕ (var (# 1)))
-                                   (var (# 0) ⊕ suc (var (# 1))))
-                                   (x ∷ y ∷ [])
-
-
+-- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
 left-id x = from-just (prove 1 (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ [])
 
-{-
+-- And some lemmas ------------------------------------------------------------
+move-suc-lhs : Expr 2
+move-suc-lhs = suc (var (# 1) ⊕ (var (# 0)))
 
-comm-plus x y = from-just (getEquality (prove (var (# 0) ⊕ var (# 1))
-                                              (var (# 1) ⊕ var (# 0)))
-                                              (x ∷ y ∷ []))
--}
+move-suc-rhs : Expr 2
+move-suc-rhs = var (# 1) ⊕ suc (var (# 0))
 
--- It would be nice to show this automatically
+-- This is a bit cheating, we actually need to instantiate them with
+-- the arguments flipped. Real solution: use unification.
+move-suc-lemma : Lemma
+move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs
+                         (λ Γ → move-suc (lookup (suc zero) Γ) (lookup zero Γ))
+
+left-id-lhs : Expr 1
+left-id-lhs = var (# 0)
+
+left-id-rhs : Expr 1
+left-id-rhs = var (# 0) ⊕ zero
+
+left-id-lemma : Lemma
+left-id-lemma = lemma 1 left-id-lhs left-id-rhs
+                        (from-just (prove 1 left-id-lhs left-id-rhs))
+
+-- Grand finale: commutativity of plus ----------------------------------------
 comm-plus : ∀ x y → x + y ≡ y + x
-comm-plus zero    y = left-id y
-comm-plus (suc x) y = cong suc (comm-plus x y) ⟨ trans ⟩ move-suc y x
+comm-plus x y = from-just (prove-with-lemmas 1 (move-suc-lemma ∷ left-id-lemma ∷ [])
+                                             2 (var (# 0) ⊕ var (# 1))
+                                               (var (# 1) ⊕ var (# 0)))
+                          (x ∷ y ∷ [])
+
