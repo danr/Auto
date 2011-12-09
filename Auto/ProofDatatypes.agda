@@ -17,13 +17,12 @@ data Error : Set where
     no-lemmas-left : Error                          → Error
 
 data Trace : Set where
-    _stepPlus_ : Trace → Trace → Trace
-    stepSuc : Trace → Trace
-    stepMatchIH stepSideMatch noTrace : Trace
-    lemmaStep : {n : ℕ} (e : Expr n) → Trace
-    apply : Trace → Trace → Trace
-    refl : Trace
-    base⟨_⟩step⟨_⟩ : Trace → Trace → Trace
+    _stepPlus_                             : Trace → Trace → Trace
+    base⟨_⟩step⟨_⟩                         : Trace → Trace → Trace
+    apply                                  : Trace → Trace → Trace
+    stepSuc                                : Trace → Trace
+    refl stepMatchIH stepSideMatch noTrace : Trace
+    lemmaStep                              : {n : ℕ} (e : Expr n) → Trace
 
 
 data Try (A : Set) : Set where

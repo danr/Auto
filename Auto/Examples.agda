@@ -51,6 +51,16 @@ move-suc-lemma : Lemma
 move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs
                          (λ Γ → move-suc (lookup (suc zero) Γ) (lookup zero Γ))
 
+-- Some lemmas:  move-suc
+move-suc-lhs′ : Expr 2
+move-suc-lhs′ = suc (var (# 0) ⊕ (var (# 1)))
+
+move-suc-rhs′ : Expr 2
+move-suc-rhs′ = var (# 0) ⊕ suc (var (# 1))
+
+move-suc′ = prove 2 move-suc-lhs′ move-suc-rhs′
+
+
 -- Left idenity lemma
 left-id-lhs : Expr 1
 left-id-lhs = var (# 0)
@@ -85,6 +95,6 @@ comm-plus′ = prove-with-lemmas 2
                                -- ^ rhs
                                1
                                -- ^ we only need to instantate lemmas once -}
-                               (move-suc-lemma ∷ left-id-lemma ∷ [])
+                               ({- move-suc-lemma ∷ -} left-id-lemma ∷ [])
                                -- ^ lemmas to use
 
