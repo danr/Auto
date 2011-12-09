@@ -137,3 +137,9 @@ prove-with-lemmas zero    lhs rhs u lemmas with normalize-with-correct lhs | nor
 prove : (n : ℕ) (lhs rhs : Expr n) → Try (Equality lhs rhs)
 prove n lhs rhs = prove-with-lemmas n lhs rhs 0 []
 
+open import Auto.ReplaceZero
+
+prove-with-induction-on : (n : ℕ) (v : Fin n) (lhs rhs : Expr n) → Try (Equality lhs rhs)
+prove-with-induction-on zero    () lhs rhs
+prove-with-induction-on (suc n) v  lhs rhs = reshuffle-correct lhs rhs v <$>⟨ reshuffle ⟩
+                                             prove (suc n) (place v first lhs) (place v first rhs)

@@ -26,11 +26,13 @@ assoc-plus-vec Γ = from-success (prove 3 (var (# 0) ⊕ (var (# 1) ⊕ var (# 2
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
 
+{-
 -- Infamous move-suc lemma ----------------------------------------------------
 move-suc : ∀ x y → suc (x + y) ≡ x + suc y
 move-suc x y = from-success (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
                                      (var (# 0) ⊕ suc (var (# 1))))
                             (x ∷ y ∷ [])
+-}
 
 -- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
@@ -45,21 +47,11 @@ move-suc-lhs = suc (var (# 1) ⊕ (var (# 0)))
 move-suc-rhs : Expr 2
 move-suc-rhs = var (# 1) ⊕ suc (var (# 0))
 
--- This is a bit cheating, we actually need to instantiate them with
--- the arguments flipped. Real solution: use unification.
+-- Need induction on y to prove this
+move-suc = prove-with-induction-on 2 (# 1) move-suc-lhs move-suc-rhs
+
 move-suc-lemma : Lemma
-move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs
-                         (λ Γ → move-suc (lookup (suc zero) Γ) (lookup zero Γ))
-
--- Some lemmas:  move-suc
-move-suc-lhs′ : Expr 2
-move-suc-lhs′ = suc (var (# 0) ⊕ (var (# 1)))
-
-move-suc-rhs′ : Expr 2
-move-suc-rhs′ = var (# 0) ⊕ suc (var (# 1))
-
-move-suc′ = prove 2 move-suc-lhs′ move-suc-rhs′
-
+move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs (from-success move-suc)
 
 -- Left idenity lemma
 left-id-lhs : Expr 1
@@ -82,7 +74,7 @@ comm-plus x y = from-success (prove-with-lemmas
                                  (var (# 1) ⊕ var (# 0))
                                  -- ^ rhs
                                  1
-                                 -- ^ we only need to instantate lemmas once -}
+                                 -- ^ we only need to instantate lemmas once
                                  (move-suc-lemma ∷ left-id-lemma ∷ []))
                                  -- ^ lemmas to use
                           (x ∷ y ∷ [])
@@ -94,7 +86,7 @@ comm-plus′ = prove-with-lemmas 2
                                (var (# 1) ⊕ var (# 0))
                                -- ^ rhs
                                1
-                               -- ^ we only need to instantate lemmas once -}
-                               ({- move-suc-lemma ∷ -} left-id-lemma ∷ [])
+                               -- ^ we only need to instantate lemmas once
+                               (move-suc-lemma ∷ left-id-lemma ∷ [])
                                -- ^ lemmas to use
 

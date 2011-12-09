@@ -20,7 +20,7 @@ data Trace : Set where
     _stepPlus_                             : Trace → Trace → Trace
     base⟨_⟩step⟨_⟩                         : Trace → Trace → Trace
     apply                                  : Trace → Trace → Trace
-    stepSuc                                : Trace → Trace
+    reshuffle stepSuc                      : Trace → Trace
     refl stepMatchIH stepSideMatch noTrace : Trace
     lemmaStep                              : {n : ℕ} (e : Expr n) → Trace
 

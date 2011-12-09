@@ -5,8 +5,6 @@ open import Data.Vec
 open import Data.Nat renaming (pred to Nat-pred ; _≟_ to _≟-Nat_)
 open import Data.Fin hiding (_+_ ; pred)
 open import Data.Fin.Props renaming (_≟_ to _≟-Fin_)
-open import Data.List hiding (replicate)
-open import Data.Product
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary
 open import Relation.Nullary.Decidable
@@ -74,3 +72,4 @@ Env n = Vec ℕ n
 ⟦ e₁ ⊕ e₂ ⟧ Γ = ⟦ e₁ ⟧ Γ + ⟦ e₂ ⟧ Γ
 ⟦ suc e   ⟧ Γ = suc (⟦ e ⟧ Γ)
 ⟦ zero    ⟧ Γ = zero
+
