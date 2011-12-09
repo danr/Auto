@@ -19,48 +19,44 @@ data Expr (n : ℕ) : Set where
   suc  : (e : Expr n)     → Expr n
   zero : Expr n
 
--- Decidable Equality (in a module to hide some boring functions) -------------
-module DecidableEquality where
-  private
-    -- Boring functions to define decidable equality
-    unvar : {n : ℕ} {x y : Fin n} → var x ≡ var y → x ≡ y
-    unvar refl      = refl
+private
+  -- Boring functions to define decidable equality
+  unvar : {n : ℕ} {x y : Fin n} → var x ≡ var y → x ≡ y
+  unvar refl      = refl
 
-    left : {n : ℕ} → Expr n → Expr n
-    left (e₁ ⊕ e₂)  = e₁
-    left _          = zero
+  left : {n : ℕ} → Expr n → Expr n
+  left (e₁ ⊕ e₂)  = e₁
+  left _          = zero
 
-    right : {n : ℕ} → Expr n → Expr n
-    right (e₁ ⊕ e₂) = e₂
-    right _         = zero
+  right : {n : ℕ} → Expr n → Expr n
+  right (e₁ ⊕ e₂) = e₂
+  right _         = zero
 
-    pred : {n : ℕ} → Expr n → Expr n
-    pred (suc e)    = e
-    pred _          = zero
+  pred : {n : ℕ} → Expr n → Expr n
+  pred (suc e)    = e
+  pred _          = zero
 
-  -- Decidable equality
-  _≟_ : {n : ℕ} → Decidable {A = Expr n} _≡_
-  var x     ≟ var y     = map′ (cong var) unvar (x ≟-Fin y)
-  var x     ≟ (e₁ ⊕ e₂) = no λ ()
-  var x     ≟ suc e     = no λ ()
-  var x     ≟ zero      = no λ ()
-  (e₁ ⊕ e₂) ≟ var x     = no λ ()
-  (e₁ ⊕ e₂) ≟ (e₁′ ⊕ e₂′) with e₁ ≟ e₁′ | e₂ ≟ e₂′
-  (e₁ ⊕ e₂) ≟ (.e₁ ⊕ .e₂) | yes refl | yes refl = yes refl
-  ...                     | no ¬p    | _        = no (¬p ∘ cong left)
-  ...                     | _        | no ¬p    = no (¬p ∘ cong right)
-  (e₁ ⊕ e₂) ≟ suc e     = no λ ()
-  (e₁ ⊕ e₂) ≟ zero      = no λ ()
-  suc e     ≟ var x     = no λ ()
-  suc e     ≟ (e₁ ⊕ e₂) = no λ ()
-  suc e     ≟ suc e'    = map′ (cong suc) (cong pred) (e ≟ e')
-  suc e     ≟ zero      = no λ ()
-  zero      ≟ var x     = no λ ()
-  zero      ≟ (e₁ ⊕ e₂) = no λ ()
-  zero      ≟ suc e     = no λ ()
-  zero      ≟ zero      = yes refl
-
-open DecidableEquality public
+-- Decidable equality
+_≟_ : {n : ℕ} → Decidable {A = Expr n} _≡_
+var x     ≟ var y     = map′ (cong var) unvar (x ≟-Fin y)
+var x     ≟ (e₁ ⊕ e₂) = no λ ()
+var x     ≟ suc e     = no λ ()
+var x     ≟ zero      = no λ ()
+(e₁ ⊕ e₂) ≟ var x     = no λ ()
+(e₁ ⊕ e₂) ≟ (e₁′ ⊕ e₂′) with e₁ ≟ e₁′ | e₂ ≟ e₂′
+(e₁ ⊕ e₂) ≟ (.e₁ ⊕ .e₂) | yes refl | yes refl = yes refl
+...                     | no ¬p    | _        = no (¬p ∘ cong left)
+...                     | _        | no ¬p    = no (¬p ∘ cong right)
+(e₁ ⊕ e₂) ≟ suc e     = no λ ()
+(e₁ ⊕ e₂) ≟ zero      = no λ ()
+suc e     ≟ var x     = no λ ()
+suc e     ≟ (e₁ ⊕ e₂) = no λ ()
+suc e     ≟ suc e'    = map′ (cong suc) (cong pred) (e ≟ e')
+suc e     ≟ zero      = no λ ()
+zero      ≟ var x     = no λ ()
+zero      ≟ (e₁ ⊕ e₂) = no λ ()
+zero      ≟ suc e     = no λ ()
+zero      ≟ zero      = yes refl
 
 -- The environment, a mapping from varibles to natural numbers ----------------
 Env : ℕ → Set
