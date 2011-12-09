@@ -16,22 +16,32 @@ data Error : Set where
     base-failed    : Error                          → Error
     no-lemmas-left : Error                          → Error
 
+data Trace : Set where
+    _stepPlus_ : Trace → Trace → Trace
+    stepSuc : Trace → Trace
+    stepMatchIH stepSideMatch noTrace : Trace
+    lemmaStep : {n : ℕ} (e : Expr n) → Trace
+    apply : Trace → Trace → Trace
+    refl : Trace
+    base⟨_⟩step⟨_⟩ : Trace → Trace → Trace
+
+
 data Try (A : Set) : Set where
-    success : A → Try A
+    success : Trace → A → Try A
     fail    : Error → Try A
 
-_<$>_ : {A B : Set} → (A → B) → Try A → Try B
-f <$> success a = success (f a)
-f <$> fail e    = fail e
+_<$>⟨_⟩_ : {A B : Set} → (A → B) → (Trace → Trace) → Try A → Try B
+f <$>⟨ g ⟩ success t a = success (g t) (f a)
+f <$>⟨ g ⟩ fail e      = fail e
 
 _<+>_ : {A : Set} → Try A → Try A → Try A
-success x <+> _   = success x
-fail _    <+> try = try
+success t x <+> _   = success t x
+fail _      <+> try = try
 
 From-success : (A : Set) → Try A → Set
-From-success A (success _) = A
-From-success A (fail _)    = ⊤
+From-success A (success _ _) = A
+From-success A (fail _)      = ⊤
 
 from-success : {A : Set} (x : Try A) → From-success A x
-from-success (success x) = x
-from-success (fail _)    = _
+from-success (success _ x) = x
+from-success (fail _)      = _

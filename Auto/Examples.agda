@@ -29,8 +29,8 @@ assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
 -- Infamous move-suc lemma ----------------------------------------------------
 move-suc : ∀ x y → suc (x + y) ≡ x + suc y
 move-suc x y = from-success (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
-                                  (var (# 0) ⊕ suc (var (# 1))))
-                                  (x ∷ y ∷ [])
+                                     (var (# 0) ⊕ suc (var (# 1))))
+                            (x ∷ y ∷ [])
 
 -- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
@@ -76,4 +76,15 @@ comm-plus x y = from-success (prove-with-lemmas
                                  (move-suc-lemma ∷ left-id-lemma ∷ []))
                                  -- ^ lemmas to use
                           (x ∷ y ∷ [])
+
+comm-plus′ = prove-with-lemmas 2
+                               -- ^ two variables
+                               (var (# 0) ⊕ var (# 1))
+                               -- ^ lhs
+                               (var (# 1) ⊕ var (# 0))
+                               -- ^ rhs
+                               1
+                               -- ^ we only need to instantate lemmas once -}
+                               (move-suc-lemma ∷ left-id-lemma ∷ [])
+                               -- ^ lemmas to use
 

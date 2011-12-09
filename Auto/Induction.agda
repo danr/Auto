@@ -15,7 +15,6 @@ open import Auto.ProofDatatypes
 open import Auto.Normalization
 open import Auto.Instantiation
 
-
 -- Induction ------------------------------------------------------------------
 induction-inst : {n : ℕ} (lhs rhs : Expr (suc n))
                → (∀ Γ → ⟦ inst-zero lhs ⟧ Γ ≡ ⟦ inst-zero rhs ⟧ Γ)
@@ -48,8 +47,8 @@ inst-lemma     lr []                        e = fail (lemma-failed e)
 inst-lemma {n} lr (lemma m lhs rhs eq ∷ ls) e with n ≟-Nat m
 ... | no ¬p = inst-lemma lr ls e
 inst-lemma lr    (lemma m lhs rhs eq ∷ ls) e | yes refl with e ≟ lhs | e ≟ rhs
-inst-lemma left  (lemma m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = success (rhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ eq Γ)
-inst-lemma right (lemma m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = success (lhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
+inst-lemma left  (lemma m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = success (lemmaStep rhs) (rhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ eq Γ)
+inst-lemma right (lemma m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = success (lemmaStep lhs) (lhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
 ... | _ | _ = inst-lemma lr ls e
 
 -- Instantiate the induction hypothesis. Match the goal with the given. -------
@@ -59,9 +58,9 @@ inst-ih : {n : ℕ}
         → Try (∀ Γ → ⟦ hl ⟧ Γ ≡ ⟦ hr ⟧ Γ → ⟦ sl ⟧ Γ ≡ ⟦ sr ⟧ Γ)
 inst-ih uses lemmas hl hr sl sr with sl ≟ sr | sl ≟ hl | hr ≟ sr
 -- The step sides match
-... | yes s-eq | _        | _        = success λ Γ _  → cong-⟦─⟧ Γ s-eq
+... | yes s-eq | _        | _        = success stepSideMatch λ Γ _  → cong-⟦─⟧ Γ s-eq
 -- The step sides match the induction hypothesis
-... | _        | yes l-eq | yes r-eq = success λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
+... | _        | yes l-eq | yes r-eq = success stepMatchIH λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
 {-
 -- The left step side match the induction hypothesis  (this could be nice to use)
 ... | _        | yes l-eq | no ¬p    = ...
@@ -70,20 +69,20 @@ inst-ih uses lemmas hl hr sl sr with sl ≟ sr | sl ≟ hl | hr ≟ sr
 -}
 -- The step sides both start with suc
 inst-ih uses lemmas hl hr (suc sl)  (suc sr)  | _ | _ | _ with inst-ih uses lemmas hl hr sl sr
-... | success p = success λ Γ ih → cong suc (p Γ ih)
+... | success t p = success (stepSuc t) λ Γ ih → cong suc (p Γ ih)
 ... | fail e    = fail e
 -- The step sides both start with ⊕
 inst-ih uses lemmas hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂) | _ | _ | _ with inst-ih uses lemmas hl hr l₁ r₁ | inst-ih uses lemmas hl hr l₂ r₂
-... | success p₁ | success p₂ = success λ Γ ih → p₁ Γ ih ⟨ cong₂ _+_ ⟩ p₂ Γ ih
-... | _          | _          = fail (step-failed hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂))
+... | success t₁ p₁ | success t₂ p₂ = success (t₁ stepPlus t₂) λ Γ ih → p₁ Γ ih ⟨ cong₂ _+_ ⟩ p₂ Γ ih
+... | _             | _             = fail (step-failed hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂))
 -- No lemmas uses left
 inst-ih zero         lemmas hl hr sl sr | _ | _ | _ = fail (step-failed hl hr sl sr)
 -- Instantiate a lemma
 inst-ih (suc uses-1) lemmas hl hr sl sr | _ | _ | _ with inst-lemma left lemmas sl | inst-lemma right lemmas sr
-... | success (sl′ , sl≡sl′) | _ = (λ ih' Γ ih → sl≡sl′ Γ ⟨ trans ⟩ ih' Γ ih)
-                                <$> inst-ih uses-1 lemmas hl hr sl′ sr
-... | _ | success (sr′ , sr≡sr′) = (λ ih' Γ ih → ih' Γ ih ⟨ trans ⟩ sym (sr≡sr′ Γ))
-                                <$> inst-ih uses-1 lemmas hl hr sl sr′
+... | success t (sl′ , sl≡sl′) | _ = (λ ih' Γ ih → sl≡sl′ Γ ⟨ trans ⟩ ih' Γ ih)
+                                <$>⟨ apply t ⟩ inst-ih uses-1 lemmas hl hr sl′ sr
+... | _ | success t (sr′ , sr≡sr′) = (λ ih' Γ ih → ih' Γ ih ⟨ trans ⟩ sym (sr≡sr′ Γ))
+                                <$>⟨ apply t ⟩ inst-ih uses-1 lemmas hl hr sl sr′
 ... | _ | _ = fail (no-lemmas-left (step-failed hl hr sl sr))
 
 -- Simplification. ------------------------------------------------------------
@@ -95,13 +94,13 @@ simp : {n : ℕ}
      → Try (Equality lhs rhs)
 simp uses lemmas lhs rhs with lhs ≟ rhs
 -- lhs ≡ rhs by reflexivity
-... | yes p = success (λ Γ → cong-⟦─⟧ Γ p)
+... | yes p = success refl (λ Γ → cong-⟦─⟧ Γ p)
 -- No lemma uses left
 simp zero         lemmas lhs rhs | no ¬p = fail (no-lemmas-left (simp-failed lhs rhs))
 -- Try to use a lemma
 simp (suc uses-1) lemmas lhs rhs | no ¬p with inst-lemma left lemmas lhs | inst-lemma right lemmas rhs
-... | success (lhs′ , lhs≡lhs′) | _ = (λ x Γ → lhs≡lhs′ Γ ⟨ trans ⟩ x Γ) <$> simp uses-1 lemmas lhs′ rhs
-... | _ | success (rhs′ , rhs≡rhs′) = (λ x Γ → x Γ ⟨ trans ⟩ sym (rhs≡rhs′ Γ)) <$> simp uses-1 lemmas lhs rhs′
+... | success t (lhs′ , lhs≡lhs′) | _ = (λ x Γ → lhs≡lhs′ Γ ⟨ trans ⟩ x Γ) <$>⟨ apply t ⟩ simp uses-1 lemmas lhs′ rhs
+... | _ | success t (rhs′ , rhs≡rhs′) = (λ x Γ → x Γ ⟨ trans ⟩ sym (rhs≡rhs′ Γ)) <$>⟨ apply t ⟩ simp uses-1 lemmas lhs rhs′
 ... | _ | _ = fail (simp-failed lhs rhs)
 
 -- Induction on the first variable --------------------------------------------
@@ -113,10 +112,10 @@ induction uses lemmas lhs rhs with normalize-with-correct (inst-zero lhs) | norm
 -- Base case failed
 ... | fail e = fail (base-failed e)
 -- Base case suceeded
-... | success base with normalize-with-correct lhs | normalize-with-correct rhs | normalize-with-correct (inst-suc lhs) | normalize-with-correct (inst-suc rhs)
+... | success tb base with normalize-with-correct lhs | normalize-with-correct rhs | normalize-with-correct (inst-suc lhs) | normalize-with-correct (inst-suc rhs)
 ... | lhs-h , eq-l-h | rhs-h , eq-r-h | lhs-s , eq-l-s | rhs-s , eq-r-s with inst-ih uses lemmas lhs-h rhs-h lhs-s rhs-s
 -- Induction step suceeded
-... | success ih-normalized = success (induction-inst lhs rhs
+... | success th ih-normalized = success base⟨ tb ⟩step⟨ th ⟩ (induction-inst lhs rhs
                                     (λ Γ → eq-l-0 Γ ⟨ trans ⟩ base Γ ⟨ trans ⟩ sym (eq-r-0 Γ))
                                     (λ Γ ih → eq-l-s Γ                        ⟨ trans ⟩
                                               ih-normalized Γ (sym (eq-l-h Γ) ⟨ trans ⟩
@@ -131,7 +130,7 @@ prove-with-lemmas : (n : ℕ) (lhs rhs : Expr n) → ℕ → List Lemma →  Try
 prove-with-lemmas (suc n) lhs rhs u lemmas = induction u lemmas lhs rhs
 prove-with-lemmas zero    lhs rhs u lemmas with normalize-with-correct lhs | normalize-with-correct rhs
 ... | lhs′ , eql | rhs′ , eqr = (λ x Γ → eql Γ ⟨ trans ⟩ x Γ ⟨ trans ⟩ sym (eqr Γ))
-                                <$> simp u lemmas lhs′ rhs′
+                                <$>⟨ id ⟩ simp u lemmas lhs′ rhs′
 
 
 -- Prove a property without lemmas --------------------------------------------
