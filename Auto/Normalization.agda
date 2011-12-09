@@ -1,43 +1,33 @@
-module Auto.Normalization where
+open import Auto.Model
+
+module Auto.Normalization {T : Theory} (M : Model T) where
+
+open Model M
 
 open import Data.Vec
 open import Data.Nat renaming (_≟_ to _≟-Nat_)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality
 open import Function
-open import Auto.Expr
-
--- Normalization of plus ------------------------------------------------------
-_⨁_ : {n : ℕ} → Expr n → Expr n → Expr n
--- Definition of plus
-suc e     ⨁ e₂ = suc (e ⨁ e₂)
-zero      ⨁ e₂ = e₂
--- Nothing special here
-var x     ⨁ e₂ = var x ⊕ e₂
-(e₁ ⊕ e₂) ⨁ e₃ = (e₁ ⊕ e₂) ⊕ e₃
-
-⨁-correct : {n : ℕ} (e₁ e₂ : Expr n) (Γ : Env n)
-           → ⟦ e₁ ⊕ e₂ ⟧ Γ ≡ ⟦ e₁ ⨁ e₂ ⟧ Γ
-⨁-correct (suc e)   e₂ Γ = cong suc (⨁-correct e e₂ Γ)
-⨁-correct zero      e₂ Γ = refl
-⨁-correct (var x)   e₂ Γ = refl
-⨁-correct (e₁ ⊕ e₂) e₃ Γ = refl
 
 -- Normalization of an expression ---------------------------------------------
 -- How would one prove completeness?
 normalize : {n : ℕ} (e : Expr n) → Expr n
-normalize (var x)   = var x
-normalize (e₁ ⊕ e₂) = normalize e₁ ⨁ normalize e₂
-normalize (suc e)   = suc (normalize e)
-normalize zero      = zero
+normalize zero          = zero
+normalize (suc e)       = suc (normalize e)
+normalize (var x)       = var x
+normalize (e₁ [ b ] e₂) = bin-normalize b (normalize e₁) (normalize e₂)
+normalize (u ∙ e)       = un-normalize u (normalize e)
 
 normalize-correct : {n : ℕ} (e : Expr n) (Γ : Env n)
                   → ⟦ e ⟧ Γ ≡ ⟦ normalize e ⟧ Γ
-normalize-correct (var x)   Γ = refl
-normalize-correct (e₁ ⊕ e₂) Γ = normalize-correct e₁ Γ ⟨ cong₂ _+_ ⟩ normalize-correct e₂ Γ ⟨ trans ⟩
-                                ⨁-correct (normalize e₁) (normalize e₂) Γ
-normalize-correct (suc e)   Γ = cong suc (normalize-correct e Γ)
-normalize-correct zero      Γ = refl
+normalize-correct zero          Γ = refl
+normalize-correct (suc e)       Γ = cong suc (normalize-correct e Γ)
+normalize-correct (var x)       Γ = refl
+normalize-correct (e₁ [ b ] e₂) Γ = normalize-correct e₁ Γ ⟨ cong₂ (B-eval b) ⟩ normalize-correct e₂ Γ ⟨ trans ⟩
+                                    bin-normalize-correct b (normalize e₁) (normalize e₂) Γ
+normalize-correct (u ∙ e)       Γ = cong (U-eval u) (normalize-correct e Γ) ⟨ trans ⟩
+                                    un-normalize-correct u (normalize e) Γ
 
 normalize-with-correct : {n : ℕ} (e : Expr n) → ∃ λ e′ → ∀ Γ → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ
 normalize-with-correct e = normalize e , normalize-correct e

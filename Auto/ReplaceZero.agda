@@ -1,6 +1,10 @@
-module Auto.ReplaceZero where
+open import Auto.Model
 
-open import Data.Vec
+module Auto.ReplaceZero {T : Theory} (M : Model T) where
+
+open Model M
+
+open import Data.Vec hiding ([_])
 open import Data.Nat renaming (pred to Nat-pred ; _≟_ to _≟-Nat_)
 open import Data.Fin hiding (_+_ ; pred)
 open import Data.Fin.Props renaming (_≟_ to _≟-Fin_)
@@ -13,15 +17,15 @@ open import Relation.Nullary
 
 open import Function
 
-open import Auto.Expr
-open import Auto.ProofDatatypes
+import Auto.ProofDatatypes as PD; open PD M
 
 place_first : ∀ {n} → Fin (suc n) → Expr (suc n) → Expr (suc n)
 place i first (var x) with x ≟-Fin zero | i ≟-Fin x
 ... | yes p | _      = var i
 ... | no ¬p | yes p  = var zero
 ... | no ¬p | no ¬p′ = var x
-place i first (e₁ ⊕ e₂) = (place i first e₁) ⊕ (place i first e₂)
+place i first (e₁ [ b ] e₂) = (place i first e₁) [ b ] (place i first e₂)
+place i first (u ∙ e)   = u ∙ (place i first e)
 place i first (suc e)   = suc (place i first e)
 place i first zero      = zero
 
@@ -62,7 +66,8 @@ private
   place-correct i (var .zero) Γ | yes refl | _        = lemma₂ i Γ
   place-correct i (var .i)    Γ | no ¬p    | yes refl = lemma₁ i Γ
   place-correct i (var x)     Γ | no ¬p    | no ¬p′   = lemma₃ i x Γ ¬p ¬p′
-  place-correct i (e₁ ⊕ e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ _+_ ⟩ place-correct i e₂ Γ
+  place-correct i (e₁ [ b ] e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ (B-eval b) ⟩ place-correct i e₂ Γ
+  place-correct i (u ∙ e)   Γ = cong (U-eval u) (place-correct i e Γ)
   place-correct i (suc e)   Γ = cong suc (place-correct i e Γ)
   place-correct i zero      Γ = refl
 

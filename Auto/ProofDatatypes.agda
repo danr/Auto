@@ -1,8 +1,12 @@
-module Auto.ProofDatatypes where
+open import Auto.Model
+
+module Auto.ProofDatatypes {T : Theory} (M : Model T) where
+
+open Model M
 
 open import Data.Nat
 open import Data.Unit
-open import Auto.Expr
+
 open import Relation.Binary.PropositionalEquality
 
 -- Equality proof of two expressions under any environment --------------------

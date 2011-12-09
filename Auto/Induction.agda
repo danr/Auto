@@ -1,4 +1,8 @@
-module Auto.Induction where
+open import Auto.Model
+
+module Auto.Induction {T : Theory} (M : Model T) where
+
+open Model M
 
 open import Data.Vec
 open import Data.Fin hiding (_+_)
@@ -10,11 +14,10 @@ open import Relation.Binary
 open import Relation.Nullary
 open import Function
 
-open import Auto.Expr
-open import Auto.ProofDatatypes
-open import Auto.Normalization
-open import Auto.Instantiation
-
+import Auto.ProofDatatypes as PD ; open PD M
+import Auto.Normalization  as N  ; open N M
+import Auto.Instantiation  as I  ; open I M
+import Auto.ReplaceZero    as R  ; open R M
 private
   -- Induction ------------------------------------------------------------------
   induction-inst : {n : ℕ} (lhs rhs : Expr (suc n))
@@ -65,10 +68,13 @@ private
   induction-step uses lemmas hl hr (suc sl)  (suc sr)  | _ | _ | _ with induction-step uses lemmas hl hr sl sr
   ... | success t p = success (stepSuc t) λ Γ ih → cong suc (p Γ ih)
   ... | fail e    = fail e
+
+  -- Add this for unary and binary operators :D
   -- The step sides both start with ⊕
-  induction-step uses lemmas hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂) | _ | _ | _ with induction-step uses lemmas hl hr l₁ r₁ | induction-step uses lemmas hl hr l₂ r₂
-  ... | success t₁ p₁ | success t₂ p₂ = success (t₁ stepPlus t₂) λ Γ ih → p₁ Γ ih ⟨ cong₂ _+_ ⟩ p₂ Γ ih
-  ... | _             | _             = fail (step-failed hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂))
+  -- induction-step uses lemmas hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂) | _ | _ | _ with induction-step uses lemmas hl hr l₁ r₁ | induction-step uses lemmas hl hr l₂ r₂
+  -- ... | success t₁ p₁ | success t₂ p₂ = success (t₁ stepPlus t₂) λ Γ ih → p₁ Γ ih ⟨ cong₂ _+_ ⟩ p₂ Γ ih
+  -- ... | _             | _             = fail (step-failed hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂))
+
   -- No lemmas uses left
   induction-step zero         lemmas hl hr sl sr | _ | _ | _ = fail (step-failed hl hr sl sr)
   -- Instantiate a lemma
@@ -139,8 +145,6 @@ prove-with-lemmas zero    lhs rhs u lemmas = (λ x Γ → normalize-correct lhs 
 -- Prove a property without lemmas --------------------------------------------
 prove : (n : ℕ) (lhs rhs : Expr n) → Try (Equality lhs rhs)
 prove n lhs rhs = prove-with-lemmas n lhs rhs 0 []
-
-open import Auto.ReplaceZero
 
 prove-with-induction-on-and-lemmas : (n : ℕ) (v : Fin n) (lhs rhs : Expr n)
                                    → ℕ → List Lemma
