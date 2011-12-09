@@ -9,6 +9,7 @@ open import Data.Nat
 open import Relation.Binary.PropositionalEquality
 
 open import Auto.Expr
+open import Auto.ProofDatatypes
 open import Auto.Induction
 
 -- Some examples --------------------------------------------------------------
@@ -17,23 +18,23 @@ open import Auto.Induction
 -- This is how it looks if you use the vector
 assoc-plus-vec : (Γ : Env 3) → lookup (# 0) Γ + (lookup (# 1) Γ + lookup (# 2) Γ)
                              ≡ (lookup (# 0) Γ + lookup (# 1) Γ) + lookup (# 2) Γ
-assoc-plus-vec Γ = from-just (prove 3 (var (# 0) ⊕ (var (# 1) ⊕ var (# 2)))
+assoc-plus-vec Γ = from-success (prove 3 (var (# 0) ⊕ (var (# 1) ⊕ var (# 2)))
                                       ((var (# 0) ⊕ (var (# 1))) ⊕ var (# 2))
                                       ) Γ
-n
+
 -- But you can also specify the vector like this
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
 
 -- Infamous move-suc lemma ----------------------------------------------------
 move-suc : ∀ x y → suc (x + y) ≡ x + suc y
-move-suc x y = from-just (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
+move-suc x y = from-success (prove 2 (suc (var (# 0) ⊕ (var (# 1))))
                                   (var (# 0) ⊕ suc (var (# 1))))
                                   (x ∷ y ∷ [])
 
 -- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
-left-id x = from-just (prove 1 (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ [])
+left-id x = from-success (prove 1 (var (# 0)) (var (# 0) ⊕ zero)) (x ∷ [])
 
 -- Grand finale: commutativity of plus ----------------------------------------
 
@@ -59,19 +60,20 @@ left-id-rhs = var (# 0) ⊕ zero
 
 left-id-lemma : Lemma
 left-id-lemma = lemma 1 left-id-lhs left-id-rhs
-                        (from-just (prove 1 left-id-lhs left-id-rhs))
+                        (from-success (prove 1 left-id-lhs left-id-rhs))
 
 -- Commutativity of plus.
 comm-plus : ∀ x y → x + y ≡ y + x
-comm-plus x y = from-just (prove-with-lemmas 1
-                             -- ^ we only need to instantate lemmas once -}
-                             (move-suc-lemma ∷ left-id-lemma ∷ [])
-                             -- ^ lemmas to use
-                             2
-                             -- ^ two variables
-                             (var (# 0) ⊕ var (# 1))
-                             -- ^ lhs
-                             (var (# 1) ⊕ var (# 0)))
-                             -- ^ rhs
+comm-plus x y = from-success (prove-with-lemmas
+                                 2
+                                 -- ^ two variables
+                                 (var (# 0) ⊕ var (# 1))
+                                 -- ^ lhs
+                                 (var (# 1) ⊕ var (# 0))
+                                 -- ^ rhs
+                                 1
+                                 -- ^ we only need to instantate lemmas once -}
+                                 (move-suc-lemma ∷ left-id-lemma ∷ []))
+                                 -- ^ lemmas to use
                           (x ∷ y ∷ [])
 
