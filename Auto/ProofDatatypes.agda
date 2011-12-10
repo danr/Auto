@@ -9,6 +9,8 @@ open import Data.Unit
 
 open import Relation.Binary.PropositionalEquality
 
+open import Auto.Pretty
+
 -- Equality proof of two expressions under any environment --------------------
 Equality : {n : ℕ} (lhs rhs : Expr n) → Set
 Equality {n} lhs rhs = (Γ : Env n) → ⟦ lhs ⟧ Γ ≡ ⟦ rhs ⟧ Γ
@@ -24,11 +26,11 @@ data LR : Set where
 
 -- Error messages -------------------------------------------------------------
 data Error : Set where
-    simplify-failed : {n : ℕ} (lhs rhs : Expr n)     → Error
-    step-failed     : {n : ℕ} (hl hr sl sr : Expr n) → Error
-    lemma-failed    : {n : ℕ} (e : Expr n)           → Error
-    base-failed     : Error                          → Error
-    no-lemmas-left  : Error                          → Error
+    simplify-failed : {n : ℕ} (lhs rhs : Pretty U B n)     → Error
+    step-failed     : {n : ℕ} (hl hr sl sr : Pretty U B n) → Error
+    lemma-failed    : {n : ℕ} (e : Pretty U B n)           → Error
+    base-failed     : Error                                → Error
+    no-lemmas-left  : Error                                → Error
 
 -- Traces ---------------------------------------------------------------------
 data Trace : Set where
@@ -37,10 +39,10 @@ data Trace : Set where
     apply                                  : Trace → Trace → Trace
     reshuffle stepSuc                      : Trace → Trace
     refl stepMatchIH stepSideMatch noTrace : Trace
-    lemmaStep                              : {n : ℕ} (e : Expr n) → Trace
+    lemmaStep                              : {n : ℕ} (e : Pretty U B n) → Trace
 
 -- Try (Maybe with traces and error messages) ---------------------------------
-data Try (A : Set) : Set where
+data Try {a} (A : Set a) : Set a where
     success : Trace → A → Try A
     fail    : Error → Try A
 

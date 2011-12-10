@@ -8,42 +8,46 @@ open import Data.List hiding ([_])
 open import Data.Fin hiding (_+_)
 open import Data.Maybe
 open import Data.Nat
+open import Data.Nat.Properties
 
 open import Relation.Binary.PropositionalEquality
 
--- open Model example-model
+open Model example-model
 
-import Auto.Induction      as I  ; open I  example-model
-import Auto.ProofDatatypes as PD ; open PD example-model
-import Auto.Expr           as E  ; open E  example-theory
+import Auto.Induction      as I ; open I example-model
+import Auto.ProofDatatypes as ‵ ; open ‵ example-model
+
+open import Auto.Pretty
 
 -- Some examples --------------------------------------------------------------
 
+
+_+′_ : ∀ {n} → Expr n → Expr n → Expr n
+e₁ +′ e₂ = e₁ [ ⊕ ] e₂
+
+_*′_ : ∀ {n} → Expr n → Expr n → Expr n
+e₁ *′ e₂ = e₁ [ ⊛ ] e₂
+
+
 -- Associativity of plus ------------------------------------------------------
--- This is how it looks if you use the vector
-assoc-plus-vec : (Γ : Env 3) → lookup (# 0) Γ + (lookup (# 1) Γ + lookup (# 2) Γ)
-                             ≡ (lookup (# 0) Γ + lookup (# 1) Γ) + lookup (# 2) Γ
-assoc-plus-vec Γ = from-success (prove 3 (var (# 0) [ ⊕ ] (var (# 1) [ ⊕ ] var (# 2)))
-                                         ((var (# 0) [ ⊕ ] (var (# 1))) [ ⊕ ] var (# 2))
-                                         ) Γ
+
+assoc-plus-proof = prove′ 3 (λ x y z → x +′ (y +′ z) == (x +′ y) +′ z)
 
 -- But you can also specify the vector like this
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
-assoc-plus x y z = assoc-plus-vec (x ∷ y ∷ z ∷ [])
+assoc-plus = from-success assoc-plus-proof
 
 -- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
-left-id x = from-success (prove 1 (var (# 0)) (var (# 0) [ ⊕ ] zero)) (x ∷ [])
+left-id = from-success (prove′ 1 (λ x → x == x +′ zero))
 
-
-
-*-left-id-proof = prove 1 (var (# 0)) (var (# 0) [ ⊛ ] suc zero)
+*-left-id-proof = prove′ 1 (λ x → x == x *′ suc zero)
 
 *-left-id : ∀ x → x ≡ x * suc zero
-*-left-id x = from-success *-left-id-proof (x ∷ [])
+*-left-id = from-success *-left-id-proof
 
 *-right-id : ∀ x → x ≡ suc zero * x
-*-right-id x = from-success (prove 1 (var (# 0)) (suc zero [ ⊛ ] var (# 0))) (x ∷ [])
+*-right-id = from-success (prove′ 1 (λ x → x == suc zero *′ x))
 
 -- Grand finale: commutativity of plus ----------------------------------------
 
@@ -61,15 +65,8 @@ move-suc-lemma : Lemma
 move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs (from-success move-suc)
 
 -- Left idenity lemma
-left-id-lhs : Expr 1
-left-id-lhs = var (# 0)
-
-left-id-rhs : Expr 1
-left-id-rhs = var (# 0) [ ⊕ ] zero
-
 left-id-lemma : Lemma
-left-id-lemma = lemma 1 left-id-lhs left-id-rhs
-                        (from-success (prove 1 left-id-lhs left-id-rhs))
+left-id-lemma = from-success (lemma′ 1 (λ x → x == x +′ zero))
 
 -- Commutativity of plus.
 comm-plus : ∀ x y → x + y ≡ y + x
@@ -97,9 +94,10 @@ comm-plus′ = prove-with-lemmas 2
                                (move-suc-lemma ∷ left-id-lemma ∷ [])
                                -- ^ lemmas to use
 
-mul-0-proof = prove 1 zero (var (# 0) [ ⊛ ] zero)
+mul-0-lemma = from-success (lemma′ 1 (λ x → zero == x *′ zero))
 
 *-comm-proof = prove-with-lemmas 2 (var (# 0) [ ⊛ ] var (# 1))
                                    (var (# 1) [ ⊛ ] var (# 0))
-                                 1 (lemma 1 zero (var (# 0) [ ⊛ ] zero) (from-success mul-0-proof) ∷ [])
--- ^ stuck at y + (x * y) ≡ y * suc x (must have used the induction hypothesis once)
+                                 2 (mul-0-lemma ∷ [])
+-- ^ stuck at y + (x * y) ≡ y * suc x
+--                ^ instantiate IH here!

@@ -1,4 +1,3 @@
--- Automatic induction for a simple language with +, suc, zero and variables --
 open import Auto.Theory
 
 module Auto.Expr (T : Theory) where
