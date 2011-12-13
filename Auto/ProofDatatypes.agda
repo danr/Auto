@@ -26,9 +26,9 @@ data LR : Set where
 
 -- Error messages -------------------------------------------------------------
 data Error : Set where
-    simplify-failed : {n : ℕ} (lhs rhs : Pretty U B n)     → Error
-    step-failed     : {n : ℕ} (hl hr sl sr : Pretty U B n) → Error
-    lemma-failed    : {n : ℕ} (e : Pretty U B n)           → Error
+    simplify-failed : {n : ℕ} (lhs rhs : Pretty Op Bin n)     → Error
+    step-failed     : {n : ℕ} (hl hr sl sr : Pretty Op Bin n) → Error
+    lemma-failed    : {n : ℕ} (e : Pretty Op Bin n)           → Error
     base-failed     : Error                                → Error
     no-lemmas-left  : Error                                → Error
 
@@ -39,7 +39,7 @@ data Trace : Set where
     apply                                  : Trace → Trace → Trace
     reshuffle stepSuc                      : Trace → Trace
     refl stepMatchIH stepSideMatch noTrace : Trace
-    lemmaStep                              : {n : ℕ} (e : Pretty U B n) → Trace
+    lemmaStep                              : {n : ℕ} (e : Pretty Op Bin n) → Trace
 
 -- Try (Maybe with traces and error messages) ---------------------------------
 data Try {a} (A : Set a) : Set a where

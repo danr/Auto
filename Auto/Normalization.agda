@@ -17,17 +17,17 @@ normalize zero          = zero
 normalize (suc e)       = suc (normalize e)
 normalize (var x)       = var x
 normalize (e₁ [ b ] e₂) = bin-normalize b (normalize e₁) (normalize e₂)
-normalize (u ∙ e)       = un-normalize u (normalize e)
+normalize (o ∙ e)       = op-normalize o (normalize e)
 
 normalize-correct : {n : ℕ} (e : Expr n) (Γ : Env n)
                   → ⟦ e ⟧ Γ ≡ ⟦ normalize e ⟧ Γ
 normalize-correct zero          Γ = refl
 normalize-correct (suc e)       Γ = cong suc (normalize-correct e Γ)
 normalize-correct (var x)       Γ = refl
-normalize-correct (e₁ [ b ] e₂) Γ = normalize-correct e₁ Γ ⟨ cong₂ (B-eval b) ⟩ normalize-correct e₂ Γ ⟨ trans ⟩
+normalize-correct (e₁ [ b ] e₂) Γ = normalize-correct e₁ Γ ⟨ cong₂ (Bin-eval b) ⟩ normalize-correct e₂ Γ ⟨ trans ⟩
                                     bin-normalize-correct b (normalize e₁) (normalize e₂) Γ
-normalize-correct (u ∙ e)       Γ = cong (U-eval u) (normalize-correct e Γ) ⟨ trans ⟩
-                                    un-normalize-correct u (normalize e) Γ
+normalize-correct (op ∙ e)       Γ = cong (Op-eval op) (normalize-correct e Γ) ⟨ trans ⟩
+                                    op-normalize-correct op (normalize e) Γ
 
 normalize-with-correct : {n : ℕ} (e : Expr n) → ∃ λ e′ → ∀ Γ → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ
 normalize-with-correct e = normalize e , normalize-correct e

@@ -21,19 +21,16 @@ open import Auto.Pretty
 
 -- Some examples --------------------------------------------------------------
 
-
 _+′_ : ∀ {n} → Expr n → Expr n → Expr n
 e₁ +′ e₂ = e₁ [ ⊕ ] e₂
 
 _*′_ : ∀ {n} → Expr n → Expr n → Expr n
 e₁ *′ e₂ = e₁ [ ⊛ ] e₂
 
-
 -- Associativity of plus ------------------------------------------------------
 
 assoc-plus-proof = prove′ 3 (λ x y z → x +′ (y +′ z) == (x +′ y) +′ z)
 
--- But you can also specify the vector like this
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus = from-success assoc-plus-proof
 
@@ -93,6 +90,8 @@ comm-plus′ = prove-with-lemmas 2
                                -- ^ we only need to instantate lemmas once
                                (move-suc-lemma ∷ left-id-lemma ∷ [])
                                -- ^ lemmas to use
+
+comm-plus-lemma = lemma 2 (var (# 0) [ ⊕ ] var (# 1)) (var (# 1) [ ⊕ ] var (# 0)) (from-success comm-plus′)
 
 mul-0-lemma = from-success (lemma′ 1 (λ x → zero == x *′ zero))
 

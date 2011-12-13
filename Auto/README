@@ -1,0 +1,15 @@
+First steps in Automated Induction in Agda
+
+After Moa's talk last week about induction, I did an attempt on
+writing an automated induction solver in Agda, for the theory of
+natural numbers. It does induction on one variable and instantiates
+user-specified lemmas. If it gets stuck it will report the current
+state to the user. The set of functions is extendable, the user can
+choose unary and binary operators over natural numbers provided that
+the normalisation functions are supplied.
+
+I will show a demo of the inductive prover in action, and discuss
+future work which includes using stronger rewriting techniques like
+rippling and adding induction over other datatypes than natural
+numbers.
+

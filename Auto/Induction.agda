@@ -179,6 +179,18 @@ prove′ n f with prove n (proj₁ (close n f)) (proj₂ (close n f))
                                            (r Γ)))
 ... | fail e      = fail e
 
+prove-with-lemmas′ : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n))
+                   → ℕ → List Lemma
+                   → Try (∀ⁿ n (curryⁿ λ Γ → ⟦ proj₁ (close n f) ⟧ Γ ≡ ⟦ proj₂ (close n f) ⟧ Γ))
+prove-with-lemmas′ n f u lemmas with prove-with-lemmas n (proj₁ (close n f)) (proj₂ (close n f)) u lemmas
+... | success t r = success t (Equivalence.from (uncurry-∀ⁿ n) ⟨$⟩
+                              (λ Γ → subst id
+                                           (sym (left-inverse
+                                              (λ Γ′ → ⟦ proj₁ (close n f) ⟧ Γ′ ≡
+                                                      ⟦ proj₂ (close n f) ⟧ Γ′) Γ))
+                                           (r Γ)))
+... | fail e      = fail e
+
 infix 4 _==_
 
 _==_ : ∀ {n} → Expr n → Expr n → Expr n × Expr n

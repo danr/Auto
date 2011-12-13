@@ -62,14 +62,14 @@ private
 
   place-correct : ∀ {n} (i : Fin (suc n)) (e : Expr (suc n))
                 → ∀ Γ → ⟦ e ⟧ Γ ≡ ⟦ place i first e ⟧ (Γ [ zero ]≔ lookup i Γ [ i ]≔ lookup zero Γ)
-  place-correct i (var x)   Γ with x ≟-Fin zero | i ≟-Fin x
-  place-correct i (var .zero) Γ | yes refl | _        = lemma₂ i Γ
-  place-correct i (var .i)    Γ | no ¬p    | yes refl = lemma₁ i Γ
-  place-correct i (var x)     Γ | no ¬p    | no ¬p′   = lemma₃ i x Γ ¬p ¬p′
-  place-correct i (e₁ [ b ] e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ (B-eval b) ⟩ place-correct i e₂ Γ
-  place-correct i (u ∙ e)   Γ = cong (U-eval u) (place-correct i e Γ)
-  place-correct i (suc e)   Γ = cong suc (place-correct i e Γ)
-  place-correct i zero      Γ = refl
+  place-correct i (var x)       Γ with x ≟-Fin zero | i ≟-Fin x
+  place-correct i (var .zero)   Γ | yes refl | _        = lemma₂ i Γ
+  place-correct i (var .i)      Γ | no ¬p    | yes refl = lemma₁ i Γ
+  place-correct i (var x)       Γ | no ¬p    | no ¬p′   = lemma₃ i x Γ ¬p ¬p′
+  place-correct i (e₁ [ b ] e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ (Bin-eval b) ⟩ place-correct i e₂ Γ
+  place-correct i (op ∙ e)      Γ = cong (Op-eval op) (place-correct i e Γ)
+  place-correct i (suc e)       Γ = cong suc (place-correct i e Γ)
+  place-correct i zero          Γ = refl
 
 reshuffle-correct : {n : ℕ} (lhs rhs : Expr (suc n)) (v : Fin (suc n))
                   → Equality (place v first lhs) (place v first rhs)

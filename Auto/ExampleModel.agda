@@ -14,17 +14,11 @@ open import Function
 
 open import Auto.Model
 
-data Un : Set where
---  Double Factorial : Un
+data Op : Set where
+  Double : Op
 
-_≟-Un_ : Decidable {A = Un} _≡_
-() ≟-Un ()
-{-
-Double    ≟-Un Double    = yes refl
-Double    ≟-Un Factorial = no λ ()
-Factorial ≟-Un Double    = no λ ()
-Factorial ≟-Un Factorial = yes refl
--}
+_≟-Op_ : Decidable {A = Op} _≡_
+Double ≟-Op Double    = yes refl
 
 data Bin : Set where
   ⊕ ⊛ : Bin
@@ -44,24 +38,37 @@ factorial zero = suc zero
 factorial (suc x) = suc x * factorial x
 
 example-theory : Theory
-example-theory = record { U = Un
-                        ; B = Bin
-                        ; U-eval = λ ()
-                        ; B-eval = λ { ⊕ → _+_ ; ⊛ → _*_ }
-                        ; _≟-U_ = _≟-Un_
-                        ; _≟-B_ = _≟-Bin_
+example-theory = record { Op = Op
+                        ; Bin = Bin
+                        ; Op-eval = λ { Double → double }
+                        ; Bin-eval = λ { ⊕ → _+_ ; ⊛ → _*_ }
+                        ; _≟-Op_ = _≟-Op_
+                        ; _≟-Bin_ = _≟-Bin_
                         }
 
 example-model : Model example-theory
-example-model = record {
-                  bin-normalize         = λ { ⊕ → _⨁_ ; ⊛ → _⨂_ };
-                  bin-normalize-correct = λ { ⊕ → ⨁-correct ; ⊛ → ⨂-correct };
-                  un-normalize          = λ ();
-                  un-normalize-correct  = λ () }
+example-model = record { bin-normalize         = λ { ⊕ → _⨁_ ; ⊛ → _⨂_ }
+                       ; bin-normalize-correct = λ { ⊕ → ⨁-correct ; ⊛ → ⨂-correct }
+                       ; op-normalize          = λ { Double → dbl         }
+                       ; op-normalize-correct  = λ { Double → dbl-correct }
+                       }
   where
     import Auto.Expr as E
     open E example-theory
     open Theory example-theory
+
+    dbl : {n : ℕ} → Expr n → Expr n
+    dbl zero       = zero
+    dbl (suc e)    = suc (suc (dbl e))
+    dbl e          = Double ∙ e
+
+    dbl-correct : {n : ℕ} (e : Expr n) (Γ : Env n)
+                → ⟦ Double ∙ e ⟧ Γ ≡ ⟦ dbl e ⟧ Γ
+    dbl-correct zero          Γ = refl
+    dbl-correct (suc e)       Γ = cong (suc ∘′ suc) (dbl-correct e Γ)
+    dbl-correct (var x)       Γ = refl
+    dbl-correct (e₁ [ b ] e₂) Γ = refl
+    dbl-correct (u ∙ e)       Γ = refl
 
     _⨁_ : {n : ℕ} → Expr n → Expr n → Expr n
     -- Definition of plus
@@ -92,4 +99,3 @@ example-model = record {
     ⨂-correct (var x)       e₂ Γ = refl
     ⨂-correct (u ∙ e₁)      e₂ Γ = refl
     ⨂-correct (e₁ [ b ] e₂) e₃ Γ = refl
-
