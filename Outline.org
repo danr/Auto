@@ -1,4 +1,4 @@
-#+TITLE:     First Steps of Automated Induction in Agda
+#+TITLE:     First Steps in Automated Induction in Agda
 #+AUTHOR:    Dan Rosén
 #+EMAIL:     dan@vostro
 #+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
@@ -9,6 +9,12 @@
 #+BEAMER_FRAME_LEVEL: 1
 #+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
 
+
+* Locations
+
+\verb|github.com/danr/Auto
+
+\verb|web.student.chalmers.se/~danr/Auto/Auto.Demo.html
 
 * Introduction
 
