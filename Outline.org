@@ -1,0 +1,136 @@
+#+TITLE:     First Steps of Automated Induction in Agda
+#+AUTHOR:    Dan Rosén
+#+EMAIL:     dan@vostro
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:nil pri:nil tags:not-in-toc
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{Madrid}}
+#+BEAMER_FRAME_LEVEL: 1
+#+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
+
+
+* Introduction
+
+** I am Dan
+I'm currently doing my master's thesis about induction in Haskell by
+translation to FOL and using theorem provers, with Koen as supervisor.
+
+** Moa's talk
+After and during Moa's talk I wondered how one would do something
+similar in Agda.
+
+** What it does
+Easy things first, work with simple induction in one variable in one
+depth over natural numbers.
+
+* Idea and motivation
+
+** Make an inductive prover for Agda
+Proving things in Agda is fun, and sometimes you want to work on the
+"easy" proofs. But in a larger project it can be somewhat frustrating
+to go off to prove easy lemmas which can be time consuming and
+downright boring.
+
+* Comparison with the Ring Solver
+
+** The ring solver works by proof of reflection
+
+The algebraic structure in question, rings, is normalized to a normal
+form, and it is proved that this normalization does not change the
+evaluation under any context.
+
+If the left hand side and the right hand side evaluate to the same
+normal form the only thing that's left is a refl.
+
+** Similar, but different
+
+Here, we use the expression trees as normal forms, and massage them by
+instantiating lemmas, and normalize (in the evaluation/Agda sense) the
+trees, and prove that all these transformations preserve the
+evaluation under any context. If we eventually can get the lhs and rhs
+in both the base case and the step case, this is done by refl.
+
+** Proof by reflection - reflect the code (?)
+
+* What is in a Model
+
+** Functions
+The unary and binary functions operating directly on the domain
+
+** Normalization
+Normalization functions corresponding doing exactly the same
+recursion on the expression trees on the domain (the constructors are
+also in the tree)
+
+** Proofs
+Proofs that normalization preserves the evaluation
+
+* Propositional Equality
+
+Right now I only work with propositional equality. This is not so
+important, only a convenience. Any other equivalence relation would
+do, provided it is also a congruence relation over all the functions
+in the model.
+
+* Demo
+
+** Associativity of plus
+** Right identitiy of multiplication
+
+* Rewrite rules
+
+During induction step: if both rhs and lhs of rhs have the same
+constructor, cong it to the proof
+
+Try to instantiate a lemma. A nat is decremented to ensure termination.
+
+* Output
+
+Writes where it gets stuck, or how the proof is carried out.
+
+* Demo
+
+** Commutativity of plus
+
+* Future work : Replacing the domain of Nats
+
+** No type variables
+*** Integers,
+*** Binary representations of natural numbers
+*** Trees of units
+** Type variables
+*** Lists
+*** Trees
+Any non-dependent type
+
+** Finite types would be equal to proof by listing the cases
+(such provers already exist for Agda, but could be nice if
+they come out as a degenerate case of this prover)
+
+** Combine theories List + Nat + Tree + Integers + Maybe + Bool
+
+* Future work : Replacing the domain II
+
+** What would need to be given (estimate)
+
+*** The constructors for the datatype (and an encoding of their type)
+
+*** The simple induction schema
+i.e the dependent eliminator.
+
+* Future work : Calling other solvers
+
+The subtrees could possibly only contain function calls which we
+already have solvers for
+
+** Equations of +, *, - with the ring solver
+
+** Equations min, max etc with the (my) distributive lattice solver
+
+* Future work : Rippling
+
+** Use rippling for term rewriting
+
+Still need normalization
+
