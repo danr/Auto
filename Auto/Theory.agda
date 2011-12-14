@@ -8,8 +8,8 @@ open import Relation.Nullary
 
 record Theory : Set₁ where
   field
-    Op Bin    : Set
-    Op-eval   : Op → ℕ → ℕ
-    Bin-eval  : Bin → ℕ → ℕ → ℕ
-    _≟-Op_    : Decidable {A = Op} _≡_
-    _≟-Bin_   : Decidable {A = Bin} _≡_
+    Op Bin   : Set
+    Op-eval  : Op → ℕ → ℕ
+    Bin-eval : Bin → ℕ → ℕ → ℕ
+    _≟-Op_   : Decidable {A = Op} _≡_
+    _≟-Bin_  : Decidable {A = Bin} _≡_

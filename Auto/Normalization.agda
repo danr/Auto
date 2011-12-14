@@ -37,11 +37,6 @@ normalize-with-correct e = normalize e , normalize-correct e
 -- It should be complete wrt Agda's normalization, but I am not sure
 -- how to capture this in a type.
 
-lookup-replicate : {n : ℕ} (x : Fin n) (v : ℕ)
-                 → v ≡ lookup x (replicate v)
-lookup-replicate zero    v = refl
-lookup-replicate (suc i) v = lookup-replicate i v
-
 normalize-complete : {n : ℕ} (e : Expr n) (e′ : Expr n)
                    → ((Γ : Env n) → ⟦ e ⟧ Γ ≡ ⟦ e′ ⟧ Γ)
                    → normalize e ≡ normalize e′

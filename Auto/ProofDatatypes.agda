@@ -58,6 +58,7 @@ fail _      <+> try = try
 
 -- From just ------------------------------------------------------------------
 
+-- Large elimination
 From-success : (A : Set) → Try A → Set
 From-success A (success _ _) = A
 From-success A (fail _)      = ⊤

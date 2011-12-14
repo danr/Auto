@@ -55,17 +55,17 @@ zero          ≟ zero          = yes refl
 zero          ≟ suc e         = no λ ()
 zero          ≟ var x         = no λ ()
 zero          ≟ (e₁ [ b ] e₂) = no λ ()
-zero          ≟ (op ∙ e)       = no λ ()
+zero          ≟ (op ∙ e)      = no λ ()
 suc e         ≟ zero          = no λ ()
 suc e₁        ≟ suc e₂        = map′ (cong suc) (cong pred) (e₁ ≟ e₂)
 suc e         ≟ var x         = no λ ()
 suc e         ≟ (e₁ [ b ] e₂) = no λ ()
-suc e         ≟ (op ∙ e')      = no λ ()
+suc e         ≟ (op ∙ e')     = no λ ()
 var x         ≟ zero          = no λ ()
 var x         ≟ suc e         = no λ ()
 var x         ≟ var y         = map′ (cong var) unvar (x ≟-Fin y)
 var x         ≟ (e₁ [ b ] e₂) = no λ ()
-var x         ≟ (op ∙ e)       = no λ ()
+var x         ≟ (op ∙ e)      = no λ ()
 (e₁ [ b ] e₂) ≟ zero          = no λ ()
 (e₁ [ b ] e₂) ≟ suc e         = no λ ()
 (e₁ [ b ] e₂) ≟ var x         = no λ ()
@@ -81,8 +81,8 @@ var x         ≟ (op ∙ e)       = no λ ()
 (op ∙ e)       ≟ (e₁ [ b ] e₂) = no λ ()
 (op ∙ e)       ≟ (op' ∙ e') with e ≟ e' | op ≟-Op op'
 (op ∙ e)       ≟ (.op ∙ .e) | yes refl | yes refl = yes refl
-...                       | no ¬p    | _        = no (¬p ∘ cong right)
-...                       | _        | no ¬p    = no (¬p ∘ op-op)
+...                         | no ¬p    | _        = no (¬p ∘ cong right)
+...                         | _        | no ¬p    = no (¬p ∘ op-op)
 
 -- The environment, a mapping from varibles to natural numbers ----------------
 Env : ℕ → Set

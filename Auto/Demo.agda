@@ -40,7 +40,7 @@ plus-identity-lemma = lemma 1 (λ x → x == x +′ zero)
 move-suc-lemma = lemma-with-induction-on 2 (# 1) (λ x y → suc (y +′ x) == y +′ suc x)
 
 plus-comm-proof = prove-with-lemmas 2 (λ x y → x +′ y == y +′ x)
-                    1 ( from-success plus-identity-lemma
+                   1 ( from-success plus-identity-lemma
                       ∷ from-success move-suc-lemma
                       ∷ [])
 

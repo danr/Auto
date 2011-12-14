@@ -58,7 +58,8 @@ private
   -- The step sides match
   ... | yes s-eq | _        | _        = success step-sides-match λ Γ _  → cong-⟦─⟧ Γ s-eq
   -- The step sides match the induction hypothesis
-  ... | _        | yes l-eq | yes r-eq = success step-match-IH λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
+  ... | _        | yes l-eq | yes r-eq = success step-match-IH λ Γ ih →
+                   cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
 
   {-
   -- The left step side match the induction hypothesis  (this could be nice to use)
@@ -68,11 +69,12 @@ private
   -}
 
   -- The step sides both start with suc
-  induction-step uses lemmas hl hr (suc sl)  (suc sr)  | _ | _ | _ with induction-step uses lemmas hl hr sl sr
+  induction-step uses lemmas hl hr (suc sl)  (suc sr)  | _ | _ | _
+         with induction-step uses lemmas hl hr sl sr
   ... | success t p = success (step-suc t) λ Γ ih → cong suc (p Γ ih)
   ... | fail e      = fail e
 
-  -- Add this for unary and binary operators :D
+  -- Add this for unary and binary operators
   -- The step sides both start with ⊕
   -- induction-step uses lemmas hl hr (l₁ ⊕ l₂) (r₁ ⊕ r₂) | _ | _ | _ with induction-step uses lemmas hl hr l₁ r₁ | induction-step uses lemmas hl hr l₂ r₂
   -- ... | success t₁ p₁ | success t₂ p₂ = success (t₁ stepPlus t₂) λ Γ ih → p₁ Γ ih ⟨ cong₂ _+_ ⟩ p₂ Γ ih
@@ -81,14 +83,15 @@ private
   -- No lemmas uses left
   induction-step zero         lemmas hl hr sl sr | _ | _ | _ = fail (no-lemmas-left (step-failed (pretty hl) (pretty hr) (pretty sl) (pretty sr)))
   -- Instantiate a lemma
-  induction-step (suc uses-1) lemmas hl hr sl sr | _ | _ | _ with inst-lemma left lemmas sl | inst-lemma right lemmas sr
+  induction-step (suc uses-1) lemmas hl hr sl sr | _ | _ | _
+         with inst-lemma left lemmas sl | inst-lemma right lemmas sr
   ... | success t (sl′ , sl≡sl′) | _ = (λ ih' Γ ih → sl≡sl′ Γ ⟨ trans ⟩ ih' Γ ih)
                                   <$>⟨ apply t ⟩ induction-step uses-1 lemmas hl hr sl′ sr
   ... | _ | success t (sr′ , sr≡sr′) = (λ ih' Γ ih → ih' Γ ih ⟨ trans ⟩ sym (sr≡sr′ Γ))
                                   <$>⟨ apply t ⟩ induction-step uses-1 lemmas hl hr sl sr′
   ... | _ | _ = fail (step-failed (pretty hl) (pretty hr) (pretty sl) (pretty sr))
 
-  -- Simplifylification. ------------------------------------------------------------
+  -- Simplification. ------------------------------------------------------------
   -- Used for the base case and for proving equality with no variables
   simplify : {n : ℕ}
        → ℕ → List Lemma
