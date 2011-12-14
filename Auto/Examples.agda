@@ -29,22 +29,22 @@ e₁ *′ e₂ = e₁ [ ⊛ ] e₂
 
 -- Associativity of plus ------------------------------------------------------
 
-assoc-plus-proof = prove′ 3 (λ x y z → x +′ (y +′ z) == (x +′ y) +′ z)
+assoc-plus-proof = prove 3 (λ x y z → x +′ (y +′ z) == (x +′ y) +′ z)
 
 assoc-plus : ∀ x y z → x + (y + z) ≡ (x + y) + z
 assoc-plus = from-success assoc-plus-proof
 
 -- Left identity for plus -----------------------------------------------------
 left-id : ∀ x → x ≡ x + zero
-left-id = from-success (prove′ 1 (λ x → x == x +′ zero))
+left-id = from-success (prove 1 (λ x → x == x +′ zero))
 
-*-left-id-proof = prove′ 1 (λ x → x == x *′ suc zero)
+*-left-id-proof = prove 1 (λ x → x == x *′ suc zero)
 
 *-left-id : ∀ x → x ≡ x * suc zero
 *-left-id = from-success *-left-id-proof
 
 *-right-id : ∀ x → x ≡ suc zero * x
-*-right-id = from-success (prove′ 1 (λ x → x == suc zero *′ x))
+*-right-id = from-success (prove 1 (λ x → x == suc zero *′ x))
 
 -- Grand finale: commutativity of plus ----------------------------------------
 
@@ -56,18 +56,18 @@ move-suc-rhs : Expr 2
 move-suc-rhs = var (# 1) [ ⊕ ] suc (var (# 0))
 
 -- Need induction on y to prove this
-move-suc = prove-with-induction-on 2 (# 1) move-suc-lhs move-suc-rhs
+move-suc = prove-with-induction-on′ 2 (# 1) move-suc-lhs move-suc-rhs
 
 move-suc-lemma : Lemma
-move-suc-lemma = lemma 2 move-suc-lhs move-suc-rhs (from-success move-suc)
+move-suc-lemma = lem 2 move-suc-lhs move-suc-rhs (from-success move-suc)
 
 -- Left idenity lemma
 left-id-lemma : Lemma
-left-id-lemma = from-success (lemma′ 1 (λ x → x == x +′ zero))
+left-id-lemma = from-success (lemma 1 (λ x → x == x +′ zero))
 
 -- Commutativity of plus.
 comm-plus : ∀ x y → x + y ≡ y + x
-comm-plus x y = from-success (prove-with-lemmas
+comm-plus x y = from-success (prove-with-lemmas′
                                  2
                                  -- ^ two variables
                                  (var (# 0) [ ⊕ ] var (# 1))
@@ -80,7 +80,7 @@ comm-plus x y = from-success (prove-with-lemmas
                                  -- ^ lemmas to use
                           (x ∷ y ∷ [])
 
-comm-plus′ = prove-with-lemmas 2
+comm-plus′ = prove-with-lemmas′ 2
                                -- ^ two variables
                                (var (# 0) [ ⊕ ] var (# 1))
                                -- ^ lhs
@@ -91,11 +91,11 @@ comm-plus′ = prove-with-lemmas 2
                                (move-suc-lemma ∷ left-id-lemma ∷ [])
                                -- ^ lemmas to use
 
-comm-plus-lemma = lemma 2 (var (# 0) [ ⊕ ] var (# 1)) (var (# 1) [ ⊕ ] var (# 0)) (from-success comm-plus′)
+comm-plus-lemma = lem 2 (var (# 0) [ ⊕ ] var (# 1)) (var (# 1) [ ⊕ ] var (# 0)) (from-success comm-plus′)
 
-mul-0-lemma = from-success (lemma′ 1 (λ x → zero == x *′ zero))
+mul-0-lemma = from-success (lemma 1 (λ x → zero == x *′ zero))
 
-*-comm-proof = prove-with-lemmas 2 (var (# 0) [ ⊛ ] var (# 1))
+*-comm-proof = prove-with-lemmas′ 2 (var (# 0) [ ⊛ ] var (# 1))
                                    (var (# 1) [ ⊛ ] var (# 0))
                                  2 (mul-0-lemma ∷ [])
 -- ^ stuck at y + (x * y) ≡ y * suc x

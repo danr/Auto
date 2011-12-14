@@ -42,11 +42,11 @@ private
   -- Instantiates the first lemma that matches in the given direction
   inst-lemma : {n : ℕ} → LR → List Lemma → (e : Expr n) → Try (∃ (Equality e))
   inst-lemma     lr []                        e = fail (lemma-failed (pretty e))
-  inst-lemma {n} lr (lemma m lhs rhs eq ∷ ls) e with n ≟-Nat m
+  inst-lemma {n} lr (lem m lhs rhs eq ∷ ls) e with n ≟-Nat m
   ... | no ¬p = inst-lemma lr ls e
-  inst-lemma lr    (lemma m lhs rhs eq ∷ ls) e | yes refl with e ≟ lhs | e ≟ rhs
-  inst-lemma left  (lemma m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = success (lemmaStep (pretty rhs)) (rhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ eq Γ)
-  inst-lemma right (lemma m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = success (lemmaStep (pretty lhs)) (lhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
+  inst-lemma lr    (lem m lhs rhs eq ∷ ls) e | yes refl with e ≟ lhs | e ≟ rhs
+  inst-lemma left  (lem m lhs rhs eq ∷ ls) e | yes refl | yes p | _ = success (lemmaStep (pretty rhs)) (rhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ eq Γ)
+  inst-lemma right (lem m lhs rhs eq ∷ ls) e | yes refl | _ | yes p = success (lemmaStep (pretty lhs)) (lhs , λ Γ → cong-⟦─⟧ Γ p ⟨ trans ⟩ sym (eq Γ))
   ... | _ | _ = inst-lemma lr ls e
 
   -- Instantiate the induction hypothesis. Match the goal with the given. -------
@@ -56,9 +56,9 @@ private
           → Try (∀ Γ → ⟦ hl ⟧ Γ ≡ ⟦ hr ⟧ Γ → ⟦ sl ⟧ Γ ≡ ⟦ sr ⟧ Γ)
   induction-step uses lemmas hl hr sl sr with sl ≟ sr | sl ≟ hl | hr ≟ sr
   -- The step sides match
-  ... | yes s-eq | _        | _        = success stepSideMatch λ Γ _  → cong-⟦─⟧ Γ s-eq
+  ... | yes s-eq | _        | _        = success step-sides-match λ Γ _  → cong-⟦─⟧ Γ s-eq
   -- The step sides match the induction hypothesis
-  ... | _        | yes l-eq | yes r-eq = success stepMatchIH λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
+  ... | _        | yes l-eq | yes r-eq = success step-match-IH λ Γ ih → cong-⟦─⟧ Γ l-eq ⟨ trans ⟩ ih ⟨ trans ⟩ cong-⟦─⟧ Γ r-eq
 
   {-
   -- The left step side match the induction hypothesis  (this could be nice to use)
@@ -69,7 +69,7 @@ private
 
   -- The step sides both start with suc
   induction-step uses lemmas hl hr (suc sl)  (suc sr)  | _ | _ | _ with induction-step uses lemmas hl hr sl sr
-  ... | success t p = success (stepSuc t) λ Γ ih → cong suc (p Γ ih)
+  ... | success t p = success (step-suc t) λ Γ ih → cong suc (p Γ ih)
   ... | fail e      = fail e
 
   -- Add this for unary and binary operators :D
@@ -121,7 +121,7 @@ private
                                                  (normalize (inst-suc lhs))
                                                  (normalize (inst-suc rhs))
   -- Induction step suceeded
-  ... | success th ih-norm = success base⟨ tb ⟩step⟨ th ⟩
+  ... | success th ih-norm = success (first-var-ind tb th)
                                 (induction-inst lhs rhs
                                    (λ Γ → normalize-correct (inst-zero lhs) Γ         ⟨ trans ⟩
                                           base Γ                                      ⟨ trans ⟩
@@ -135,31 +135,31 @@ private
   ... | fail e = fail e
 
 -- Prove a property with lemmas -----------------------------------------------
-prove-with-lemmas : (n : ℕ) (lhs rhs : Expr n)
+prove-with-lemmas′ : (n : ℕ) (lhs rhs : Expr n)
                   → ℕ → List Lemma
                   → Try (Equality lhs rhs)
-prove-with-lemmas (suc n) lhs rhs u lemmas = induction u lemmas lhs rhs
-prove-with-lemmas zero    lhs rhs u lemmas = (λ x Γ → normalize-correct lhs Γ ⟨ trans ⟩
+prove-with-lemmas′ (suc n) lhs rhs u lemmas = induction u lemmas lhs rhs
+prove-with-lemmas′ zero    lhs rhs u lemmas = (λ x Γ → normalize-correct lhs Γ ⟨ trans ⟩
                                                       x Γ                     ⟨ trans ⟩
                                                       sym (normalize-correct rhs Γ))
                                             <$>⟨ id ⟩ simplify u lemmas (normalize lhs) (normalize rhs)
 
 
 -- Prove a property without lemmas --------------------------------------------
-prove : (n : ℕ) (lhs rhs : Expr n) → Try (Equality lhs rhs)
-prove n lhs rhs = prove-with-lemmas n lhs rhs 1 []
+prove′ : (n : ℕ) (lhs rhs : Expr n) → Try (Equality lhs rhs)
+prove′ n lhs rhs = prove-with-lemmas′ n lhs rhs 1 []
 
-prove-with-induction-on-and-lemmas : (n : ℕ) (v : Fin n) (lhs rhs : Expr n)
+prove-with-induction-on-and-lemmas′ : (n : ℕ) (v : Fin n) (lhs rhs : Expr n)
                                    → ℕ → List Lemma
                                    → Try (Equality lhs rhs)
-prove-with-induction-on-and-lemmas zero    () lhs rhs u lemmas
-prove-with-induction-on-and-lemmas (suc n) v  lhs rhs u lemmas =
+prove-with-induction-on-and-lemmas′ zero    () lhs rhs u lemmas
+prove-with-induction-on-and-lemmas′ (suc n) v  lhs rhs u lemmas =
    reshuffle-correct lhs rhs v <$>⟨ reshuffle ⟩
-   prove-with-lemmas (suc n) (place v first lhs) (place v first rhs) u lemmas
+   prove-with-lemmas′ (suc n) (place v first lhs) (place v first rhs) u lemmas
 
-prove-with-induction-on : (n : ℕ) (v : Fin n) (lhs rhs : Expr n)
+prove-with-induction-on′ : (n : ℕ) (v : Fin n) (lhs rhs : Expr n)
                         → Try (Equality lhs rhs)
-prove-with-induction-on n v lhs rhs = prove-with-induction-on-and-lemmas n v lhs rhs 1 []
+prove-with-induction-on′ n v lhs rhs = prove-with-induction-on-and-lemmas′ n v lhs rhs 1 []
 
 open import Data.Vec.N-ary
 open import Function.Equivalence using (module Equivalence)
@@ -168,9 +168,9 @@ open import Function.Equality using (_⟨$⟩_)
 close : ∀ {A : Set} n → N-ary n (Expr n) A → A
 close n f = f $ⁿ Vec.map var (allFin n)
 
-prove′ : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n)) →
+prove : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n)) →
          Try (∀ⁿ n (curryⁿ λ Γ → ⟦ proj₁ (close n f) ⟧ Γ ≡ ⟦ proj₂ (close n f) ⟧ Γ))
-prove′ n f with prove n (proj₁ (close n f)) (proj₂ (close n f))
+prove n f with prove′ n (proj₁ (close n f)) (proj₂ (close n f))
 ... | success t r = success t (Equivalence.from (uncurry-∀ⁿ n) ⟨$⟩
                               (λ Γ → subst id
                                            (sym (left-inverse
@@ -179,10 +179,10 @@ prove′ n f with prove n (proj₁ (close n f)) (proj₂ (close n f))
                                            (r Γ)))
 ... | fail e      = fail e
 
-prove-with-lemmas′ : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n))
-                   → ℕ → List Lemma
-                   → Try (∀ⁿ n (curryⁿ λ Γ → ⟦ proj₁ (close n f) ⟧ Γ ≡ ⟦ proj₂ (close n f) ⟧ Γ))
-prove-with-lemmas′ n f u lemmas with prove-with-lemmas n (proj₁ (close n f)) (proj₂ (close n f)) u lemmas
+prove-with-lemmas : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n))
+                  → ℕ → List Lemma
+                  → Try (∀ⁿ n (curryⁿ λ Γ → ⟦ proj₁ (close n f) ⟧ Γ ≡ ⟦ proj₂ (close n f) ⟧ Γ))
+prove-with-lemmas n f u lemmas with prove-with-lemmas′ n (proj₁ (close n f)) (proj₂ (close n f)) u lemmas
 ... | success t r = success t (Equivalence.from (uncurry-∀ⁿ n) ⟨$⟩
                               (λ Γ → subst id
                                            (sym (left-inverse
@@ -196,8 +196,15 @@ infix 4 _==_
 _==_ : ∀ {n} → Expr n → Expr n → Expr n × Expr n
 _==_ = _,_
 
-lemma′ : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n)) →
-         Try Lemma
-lemma′ n f with prove n (proj₁ (close n f)) (proj₂ (close n f))
-... | success t r = success t (lemma n (proj₁ (close n f)) (proj₂ (close n f)) r)
+lemma : ∀ n (f : N-ary n (Expr n) (Expr n × Expr n)) →
+        Try Lemma
+lemma n f with prove′ n (proj₁ (close n f)) (proj₂ (close n f))
+... | success t r = success t (lem n (proj₁ (close n f)) (proj₂ (close n f)) r)
+... | fail e      = fail e
+
+lemma-with-induction-on : ∀ n (v : Fin n)
+                         → (f : N-ary n (Expr n) (Expr n × Expr n))
+                         → Try Lemma
+lemma-with-induction-on n v f with prove-with-induction-on′ n v (proj₁ (close n f)) (proj₂ (close n f))
+... | success t r = success t (lem n (proj₁ (close n f)) (proj₂ (close n f)) r)
 ... | fail e      = fail e

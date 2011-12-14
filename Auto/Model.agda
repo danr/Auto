@@ -17,7 +17,7 @@ record Model (T : Theory) : Set₁ where
 
     op-normalize         : Op → {n : ℕ} → Expr n → Expr n
     op-normalize-correct : {n : ℕ} (op : Op) (e : Expr n) (Γ : Env n)
-                          → ⟦ op ∙ e ⟧ Γ ≡ ⟦ op-normalize op e ⟧ Γ
+                         → ⟦ op ∙ e ⟧ Γ ≡ ⟦ op-normalize op e ⟧ Γ
 
   open E T public
   open Theory T public
