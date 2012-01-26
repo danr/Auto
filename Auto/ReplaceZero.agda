@@ -24,10 +24,10 @@ place i first (var x) with x ≟-Fin zero | i ≟-Fin x
 ... | yes p | _      = var i
 ... | no ¬p | yes p  = var zero
 ... | no ¬p | no ¬p′ = var x
-place i first (e₁ [ b ] e₂) = (place i first e₁) [ b ] (place i first e₂)
-place i first (u ∙ e)   = u ∙ (place i first e)
-place i first (suc e)   = suc (place i first e)
-place i first zero      = zero
+place i first (e₁ ⟪ b ⟫ e₂) = place i first e₁ ⟪ b ⟫ place i first e₂
+place i first (u ∙ e)       = u ∙ (place i first e)
+place i first (suc e)       = suc (place i first e)
+place i first zero          = zero
 
 private
   []-lookup : {A : Set} {n : ℕ} (i : Fin n) (xs : Vec A n) (v : A)
@@ -66,7 +66,7 @@ private
   place-correct i (var .zero)   Γ | yes refl | _        = lemma₂ i Γ
   place-correct i (var .i)      Γ | no ¬p    | yes refl = lemma₁ i Γ
   place-correct i (var x)       Γ | no ¬p    | no ¬p′   = lemma₃ i x Γ ¬p ¬p′
-  place-correct i (e₁ [ b ] e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ (Bin-eval b) ⟩ place-correct i e₂ Γ
+  place-correct i (e₁ ⟪ b ⟫ e₂) Γ = place-correct i e₁ Γ ⟨ cong₂ (Bin-eval b) ⟩ place-correct i e₂ Γ
   place-correct i (op ∙ e)      Γ = cong (Op-eval op) (place-correct i e Γ)
   place-correct i (suc e)       Γ = cong suc (place-correct i e Γ)
   place-correct i zero          Γ = refl

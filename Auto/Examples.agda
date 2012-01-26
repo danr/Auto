@@ -3,8 +3,8 @@ module Auto.Examples where
 open import Auto.Model
 open import Auto.ExampleModel
 
-open import Data.Vec hiding ([_])
-open import Data.List hiding ([_])
+open import Data.Vec
+open import Data.List
 open import Data.Fin hiding (_+_)
 open import Data.Maybe
 open import Data.Nat
@@ -22,10 +22,10 @@ open import Auto.Pretty
 -- Some examples --------------------------------------------------------------
 
 _+′_ : ∀ {n} → Expr n → Expr n → Expr n
-e₁ +′ e₂ = e₁ [ ⊕ ] e₂
+e₁ +′ e₂ = e₁ ⟪ ⊕ ⟫ e₂
 
 _*′_ : ∀ {n} → Expr n → Expr n → Expr n
-e₁ *′ e₂ = e₁ [ ⊛ ] e₂
+e₁ *′ e₂ = e₁ ⟪ ⊛ ⟫ e₂
 
 -- Associativity of plus ------------------------------------------------------
 
@@ -50,10 +50,10 @@ left-id = from-success (prove 1 (λ x → x == x +′ zero))
 
 -- Some lemmas:  move-suc
 move-suc-lhs : Expr 2
-move-suc-lhs = suc (var (# 1) [ ⊕ ] (var (# 0)))
+move-suc-lhs = suc (var (# 1) ⟪ ⊕ ⟫ (var (# 0)))
 
 move-suc-rhs : Expr 2
-move-suc-rhs = var (# 1) [ ⊕ ] suc (var (# 0))
+move-suc-rhs = var (# 1) ⟪ ⊕ ⟫ suc (var (# 0))
 
 -- Need induction on y to prove this
 move-suc = prove-with-induction-on′ 2 (# 1) move-suc-lhs move-suc-rhs
@@ -70,9 +70,9 @@ comm-plus : ∀ x y → x + y ≡ y + x
 comm-plus x y = from-success (prove-with-lemmas′
                                  2
                                  -- ^ two variables
-                                 (var (# 0) [ ⊕ ] var (# 1))
+                                 (var (# 0) ⟪ ⊕ ⟫ var (# 1))
                                  -- ^ lhs
-                                 (var (# 1) [ ⊕ ] var (# 0))
+                                 (var (# 1) ⟪ ⊕ ⟫ var (# 0))
                                  -- ^ rhs
                                  1
                                  -- ^ we only need to instantate lemmas once
@@ -82,21 +82,21 @@ comm-plus x y = from-success (prove-with-lemmas′
 
 comm-plus′ = prove-with-lemmas′ 2
                                -- ^ two variables
-                               (var (# 0) [ ⊕ ] var (# 1))
+                               (var (# 0) ⟪ ⊕ ⟫ var (# 1))
                                -- ^ lhs
-                               (var (# 1) [ ⊕ ] var (# 0))
+                               (var (# 1) ⟪ ⊕ ⟫ var (# 0))
                                -- ^ rhs
                                1
                                -- ^ we only need to instantate lemmas once
                                (move-suc-lemma ∷ left-id-lemma ∷ [])
                                -- ^ lemmas to use
 
-comm-plus-lemma = lem 2 (var (# 0) [ ⊕ ] var (# 1)) (var (# 1) [ ⊕ ] var (# 0)) (from-success comm-plus′)
+comm-plus-lemma = lem 2 (var (# 0) ⟪ ⊕ ⟫ var (# 1)) (var (# 1) ⟪ ⊕ ⟫ var (# 0)) (from-success comm-plus′)
 
 mul-0-lemma = from-success (lemma 1 (λ x → zero == x *′ zero))
 
-*-comm-proof = prove-with-lemmas′ 2 (var (# 0) [ ⊛ ] var (# 1))
-                                   (var (# 1) [ ⊛ ] var (# 0))
+*-comm-proof = prove-with-lemmas′ 2 (var (# 0) ⟪ ⊛ ⟫ var (# 1))
+                                   (var (# 1) ⟪ ⊛ ⟫ var (# 0))
                                  2 (mul-0-lemma ∷ [])
 -- ^ stuck at y + (x * y) ≡ y * suc x
 --                ^ instantiate IH here!

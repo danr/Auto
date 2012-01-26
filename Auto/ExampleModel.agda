@@ -1,7 +1,7 @@
 module Auto.ExampleModel where
 
-open import Data.Vec hiding ([_])
-open import Data.List hiding ([_])
+open import Data.Vec
+open import Data.List
 open import Data.Fin hiding (_+_)
 open import Data.Maybe
 open import Data.Nat
@@ -58,30 +58,30 @@ example-model = record { bin-normalize         = λ { ⊕ → _⨁_       ; ⊛ 
     zero      ⨁ e₂ = e₂
     suc e₁    ⨁ e₂ = suc (e₁ ⨁ e₂)
     -- Nothing special here
-    e₁        ⨁ e₂ = e₁ [ ⊕ ] e₂
+    e₁        ⨁ e₂ = e₁ ⟪ ⊕ ⟫ e₂
 
     ⨁-correct : {n : ℕ} (e₁ e₂ : Expr n) (Γ : Env n)
-               → ⟦ e₁ [ ⊕ ] e₂ ⟧ Γ ≡ ⟦ e₁ ⨁ e₂ ⟧ Γ
+               → ⟦ e₁ ⟪ ⊕ ⟫ e₂ ⟧ Γ ≡ ⟦ e₁ ⨁ e₂ ⟧ Γ
     ⨁-correct (suc e)       e₂ Γ = cong suc (⨁-correct e e₂ Γ)
     ⨁-correct zero          e₂ Γ = refl
     ⨁-correct (var x)       e₂ Γ = refl
     ⨁-correct (u ∙ e₁)      e₂ Γ = refl
-    ⨁-correct (e₁ [ b ] e₂) e₃ Γ = refl
+    ⨁-correct (e₁ ⟪ b ⟫ e₂) e₃ Γ = refl
 
     _⨂_ : {n : ℕ} → Expr n → Expr n → Expr n
     -- Definition of multiplication
     zero      ⨂ e₂ = zero
     suc e₁    ⨂ e₂ = e₂ ⨁ (e₁ ⨂ e₂)
     -- Nothing special here
-    e₁        ⨂ e₂ = e₁ [ ⊛ ] e₂
+    e₁        ⨂ e₂ = e₁ ⟪ ⊛ ⟫ e₂
 
     ⨂-correct : {n : ℕ} (e₁ e₂ : Expr n) (Γ : Env n)
-               → ⟦ e₁ [ ⊛ ] e₂ ⟧ Γ ≡ ⟦ e₁ ⨂ e₂ ⟧ Γ
+               → ⟦ e₁ ⟪ ⊛ ⟫ e₂ ⟧ Γ ≡ ⟦ e₁ ⨂ e₂ ⟧ Γ
     ⨂-correct (suc e₁)      e₂ Γ = cong (_+_ (⟦ e₂ ⟧ Γ)) (⨂-correct e₁ e₂ Γ) ⟨ trans ⟩ ⨁-correct e₂ (e₁ ⨂ e₂) Γ
     ⨂-correct zero          e₂ Γ = refl
     ⨂-correct (var x)       e₂ Γ = refl
     ⨂-correct (u ∙ e₁)      e₂ Γ = refl
-    ⨂-correct (e₁ [ b ] e₂) e₃ Γ = refl
+    ⨂-correct (e₁ ⟪ b ⟫ e₂) e₃ Γ = refl
 
     dbl : {n : ℕ} → Expr n → Expr n
     dbl zero       = zero
@@ -93,5 +93,5 @@ example-model = record { bin-normalize         = λ { ⊕ → _⨁_       ; ⊛ 
     dbl-correct zero          Γ = refl
     dbl-correct (suc e)       Γ = cong (suc ∘′ suc) (dbl-correct e Γ)
     dbl-correct (var x)       Γ = refl
-    dbl-correct (e₁ [ b ] e₂) Γ = refl
+    dbl-correct (e₁ ⟪ b ⟫ e₂) Γ = refl
     dbl-correct (u ∙ e)       Γ = refl
